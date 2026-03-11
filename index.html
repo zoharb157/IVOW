@@ -95,7 +95,8 @@ function App(){
   // ── WebSocket ─────────────────────────────────────────────────────────────
   useEffect(()=>{
     const connect=()=>{
-      const ws=new WebSocket(`ws://${location.host}`);
+      const proto=location.protocol==="https:"?"wss":"ws";
+      const ws=new WebSocket(`${proto}://${location.host}`);
       wsRef.current=ws;
       ws.onopen=()=>setSyncStatus("live");
       ws.onclose=()=>{setSyncStatus("offline");setTimeout(connect,2000);};
