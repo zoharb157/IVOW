@@ -721,6 +721,20 @@ function App(){
                 </div>
               </div>
 
+              {(()=>{
+                const curTeam=pool.includes(openCard)?"pool":teams.find(t=>t.members.includes(openCard))?.id||"pool";
+                const curName=curTeam==="pool"?"Pool":teams.find(t=>t.id===curTeam)?.name||curTeam;
+                return(
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:11,background:"#EEF4FF",borderRadius:8,padding:"8px 10px",border:"1px solid #BFDBFE"}}>
+                    <span style={{fontSize:11,fontWeight:700,color:"#1E40AF",whiteSpace:"nowrap"}}>📍 {curName}</span>
+                    <select value={curTeam} onChange={e=>{moveTo(openCard,curTeam,e.target.value);}} style={{flex:1,padding:"5px 8px",borderRadius:6,border:"1.5px solid #93C5FD",fontSize:12,fontWeight:600,background:"white",cursor:"pointer",outline:"none"}}>
+                      <option value="pool">Pool</option>
+                      {teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                  </div>
+                );
+              })()}
+
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:11,background:"#F8F9FA",borderRadius:8,padding:10}}>
                 <div>
                   <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>📱 Phone</label>
@@ -829,7 +843,7 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
   const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":c.status==="plus"?"#D97706":(c.gender==="F"?"#F9A8D4":"#93C5FD");
   const isMatch=search&&matchesSearch(c,search);
   return(
-    <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd} onClick={isMobile?onMobileTap:onOpen} onDragOver={e=>{e.preventDefault();e.stopPropagation();}} onDrop={e=>{e.stopPropagation();if(onSwapDrop)onSwapDrop(c.id,from);}} className={isMatch?"search-match":""}
+    <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd} onClick={onOpen} onDragOver={e=>{e.preventDefault();e.stopPropagation();}} onDrop={e=>{e.stopPropagation();if(onSwapDrop)onSwapDrop(c.id,from);}} className={isMatch?"search-match":""}
       style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.1s"}}
       onMouseEnter={e=>{if(!isMobile){e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}}
       onMouseLeave={e=>{if(!isMobile){e.currentTarget.style.boxShadow=isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001";e.currentTarget.style.transform="none";}}}>
