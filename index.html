@@ -43,10 +43,10 @@ const CAMP_BASE={
   OTTAWA:{accent:"#E11D48",light:"#FFE4E6",border:"#F43F5E",bg:"#FFF1F2"},
 };
 const TARGET_DEFAULTS={
-  'CBB-IVOW':{targetF:3,targetM:3},'CBB-SIT':{targetF:2,targetM:3},
-  'YCC-IVOW':{targetF:3,targetM:3},'YCC-SIT':{targetF:2,targetM:3},
-  'MASAD-IVOW':{targetF:3,targetM:3},'MASAD-SIT':{targetF:2,targetM:2},
-  'WINGATE':{targetF:3,targetM:3},'OTTAWA':{targetF:3,targetM:3},
+  'CBB-IVOW':{targetF:3,targetM:3},'CBB-SIT':{targetF:2,targetM:2},
+  'YCC-IVOW':{targetF:3,targetM:3},'YCC-SIT':{targetF:2,targetM:2},
+  'MASAD-IVOW':{targetF:1,targetM:1},'MASAD-SIT':{targetF:1,targetM:1},
+  'WINGATE':{targetF:1,targetM:2},'OTTAWA':{targetF:2,targetM:1},
 };
 
 function getTeamColor(id){const c=id.split("-")[0];return CAMP_BASE[c]||{accent:"#6366F1",light:"#E0E7FF",border:"#818CF8",bg:"#F8FAFF"};}
@@ -90,13 +90,13 @@ const STAFF_INIT={
 
 const TEAMS_INIT=[
   {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:3},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
   {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:3},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
-  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:1},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:1},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:2},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:1},
 ];
 
 /* ─── State Migration ───────────────────────────────────────────────── */
