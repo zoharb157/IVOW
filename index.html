@@ -486,7 +486,7 @@ function App(){
             <span style={{color:"#93C5FD"}}>↩ Ret. ({allArr.filter(c=>c.returning).length})</span>
             <span style={{color:"#FCD34D"}}>⏳ Pend. ({allArr.filter(c=>c.maybe).length})</span>
             <span style={{color:"#A78BFA"}}>★ Lead ({allArr.filter(c=>c.role).length})</span>
-            <span style={{color:"#C4B5FD"}}>✡ Shab. ({allArr.filter(c=>c.shabbat).length})</span>
+            <span style={{color:"#C4B5FD"}}>🕎 Shab. ({allArr.filter(c=>c.shabbat).length})</span>
             <span style={{color:"#86EFAC"}}>1 Exc ({allArr.filter(c=>c.rating===1).length})</span>
             <span style={{color:"#FDE68A"}}>2 Good ({allArr.filter(c=>c.rating===2).length})</span>
             <span style={{color:"#FCA5A5"}}>3 Avg ({allArr.filter(c=>c.rating===3).length})</span>
@@ -759,7 +759,7 @@ function App(){
                     {c.role&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>★ {c.role}</span>}
                     {c.maybe?<span style={{background:"#F59E0B",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⏳ Pending</span>:c.returning?<span style={{background:"#2563EB",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>↩ Returning 2025</span>:null}
                     {c.status==="plus"&&<span style={{background:"#D97706",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⭐ Plus</span>}
-                    {c.shabbat&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>✡ Shabbat</span>}
+                    {c.shabbat&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>🕎 Shabbat</span>}
                   </div>
                   <div style={{fontSize:11,color:"#777"}}>{c.city||"—"}{c.dob?` · Age ${getAge(c.dob)}`:""} · {c.gender==="F"?"Female":"Male"}</div>
                   {c.note&&<div style={{marginTop:4,background:"#EEF4FF",border:"1px solid #93C5FD",borderRadius:5,padding:"3px 8px",fontSize:10.5,color:"#1E40AF"}}>🔗 {c.note}</div>}
@@ -823,7 +823,7 @@ function App(){
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
                 <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={c.returning} onChange={e=>updC(openCard,{returning:e.target.checked})}/><span style={{fontWeight:600,color:"#2563EB"}}>↩ Returning</span></label>
                 <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={c.maybe} onChange={e=>updC(openCard,{maybe:e.target.checked})}/><span style={{fontWeight:600,color:"#D97706"}}>⏳ Maybe</span></label>
-                <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={!!c.shabbat} onChange={e=>updC(openCard,{shabbat:e.target.checked})}/><span style={{fontWeight:600,color:"#7C3AED"}}>✡ Shabbat</span></label>
+                <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={!!c.shabbat} onChange={e=>updC(openCard,{shabbat:e.target.checked})}/><span style={{fontWeight:600,color:"#7C3AED"}}>🕎 Shabbat</span></label>
               </div>
 
               <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
@@ -902,7 +902,7 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
         <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px",marginRight:3}}>★</span>}
           {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px",marginRight:3}}>⏳</span>}
-          {c.shabbat&&<span style={{fontSize:8,background:"#EDE9FE",color:"#7C3AED",borderRadius:3,padding:"1px 3px",marginRight:3}}>✡</span>}
+          {c.shabbat&&<span style={{fontSize:9,background:"#EDE9FE",color:"#7C3AED",borderRadius:3,padding:"1px 3px",marginRight:3}}>🕎</span>}
           {c.name}
         </div>
         <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
