@@ -65,14 +65,14 @@ const STAFF_INIT={
 };
 
 const TEAMS_INIT=[
-  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:""},
-  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:""},
-  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:""},
-  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:""},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:""},
-  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:""},
-  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:""},
-  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:""},
+  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:"",targetSize:6},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
+  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:"",targetSize:6},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetSize:4},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
 ];
 
 function App(){
@@ -289,7 +289,20 @@ function App(){
                       {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
                       {females.length>0&&males.length>0&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
                       {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
-                      {team.members.length===0&&<div style={{textAlign:"center",color:col.border+"88",fontSize:11,padding:"8px 0",border:`1.5px dashed ${col.border}44`,borderRadius:6}}>Drop a counselor here</div>}
+                      {(()=>{
+                        const emptySlots=Math.max(0,(team.targetSize||0)-team.members.length);
+                        return Array.from({length:emptySlots}).map((_,i)=>(
+                          <div key={`empty-${i}`} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:"transparent",border:`1.5px dashed ${col.border}55`,marginBottom:1,minHeight:30,justifyContent:"center"}}>
+                            <span style={{fontSize:10,color:col.border+"99",fontWeight:600}}>+ Empty slot</span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:3,marginTop:4}}>
+                      <span style={{fontSize:9,color:"#AAA"}}>Target:</span>
+                      <button onClick={()=>updT(team.id,{targetSize:Math.max(0,(team.targetSize||team.members.length)-1)})} style={{width:16,height:16,borderRadius:3,border:`1px solid ${col.border}77`,background:"white",cursor:"pointer",fontSize:10,fontWeight:700,color:col.accent,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>−</button>
+                      <span style={{fontSize:10,fontWeight:700,color:col.accent,minWidth:14,textAlign:"center"}}>{team.targetSize||team.members.length}</span>
+                      <button onClick={()=>updT(team.id,{targetSize:(team.targetSize||team.members.length)+1})} style={{width:16,height:16,borderRadius:3,border:`1px solid ${col.border}77`,background:"white",cursor:"pointer",fontSize:10,fontWeight:700,color:col.accent,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>+</button>
                     </div>
                   </div>
                 );
