@@ -496,7 +496,7 @@ function App(){
                 const males=sortR(team.members.filter(id=>all[id]?.gender==="M"));
                 return(
                   <div key={team.id} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(null);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
-                    style={{background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"all 0.12s"}}>
+                    style={{background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"all 0.12s",gridColumn:(team.id==="WINGATE"||team.id==="OTTAWA")?"1 / -1":undefined}}>
                     <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:isCollapsed?0:6}}>
                       <button onClick={()=>toggleCollapse(team.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,opacity:0.4,padding:0}}>{isCollapsed?"▶":"▼"}</button>
                       {editingTeam===team.id
