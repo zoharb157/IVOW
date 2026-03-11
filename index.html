@@ -63,35 +63,35 @@ function deepClone(obj){return JSON.parse(JSON.stringify(obj));}
 /* ─── Default Data (used for seeding if DB is empty) ────────────────── */
 
 const STAFF_INIT={
-  "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-7451134",email:"yaelpar0808@gmail.com",address:""},
-  "hania":{id:"hania",name:"Hania Alfi",gender:"F",dob:"1999-11-01",city:"Givat Shmuel",exp:"Bnei Akiva, shlichut, youth counseling",returning:false,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-6465840",email:"Chenyaalafi@gmail.com",address:""},
-  "tehila":{id:"tehila",name:"Tehila Gal",gender:"F",dob:"2002-12-18",city:"Netanya",exp:"Bnei Akiva",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-4894919",email:"tehilagal3@gmail.com",address:""},
-  "yaar":{id:"yaar",name:"Yaar Ben Shalom",gender:"M",dob:"2004-01-13",city:"Kiryat Anavim",exp:"Summer camp counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"058-5000389",email:"yaer999@gmail.com",address:""},
-  "eilon":{id:"eilon",name:"Eilon",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
-  "gal":{id:"gal",name:"Gal",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
-  "tomer":{id:"tomer",name:"Tomer Porat",gender:"M",dob:"",city:"",exp:"CBB SIT 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"050-7103325",email:"",address:""},
-  "shila":{id:"shila",name:"Shila Segev",gender:"M",dob:"2002-07-29",city:"Dimona",exp:"Bnei Akiva, HaShomer HaChadash, ADHD children",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-9097519",email:"Shilosegev@gmail.com",address:""},
-  "lior":{id:"lior",name:"Lior Glam",gender:"F",dob:"2004-12-16",city:"Harish",exp:"IVOW alumna, day camp ages 3-15",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5551147",email:"liorglam20@gmail.com",address:""},
-  "daniela":{id:"daniela",name:"Daniela Naor",gender:"F",dob:"2005-03-29",city:"Hod HaSharon",exp:"Piano, Education Corps, Gesharim",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5824311",email:"naor.dundush@gmail.com",address:""},
-  "ofek":{id:"ofek",name:"Ofek Gani",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
-  "adar":{id:"adar",name:"Adar Buchris",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-6702478",email:"",address:""},
-  "gili":{id:"gili",name:"Gili Tzvi",gender:"F",dob:"2004-11-08",city:"Gan Yavne",exp:"YCC alumna, substitute teacher",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-3455101",email:"gilitzvii15@gmail.com",address:""},
-  "itai":{id:"itai",name:"Itai Hazut",gender:"M",dob:"2003-02-14",city:"Yavne",exp:"Military boarding school, counselor cert, biathlon",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5279201",email:"Itayhazoot@gmail.com",address:""},
-  "dvir":{id:"dvir",name:"Dvir Maimon",gender:"M",dob:"2001-04-04",city:"Sderot",exp:"Scouts cmdr, Paran Mechina",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5511407",email:"Dvirmimon123@gmail.com",address:""},
-  "ziv":{id:"ziv",name:"Ziv Amar",gender:"M",dob:"2003-11-29",city:"Lehavim",exp:"Children biathlon gr.1-6, Yahalom unit",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-6212286",email:"Zivamar2003@gmail.com",address:""},
-  "kobi":{id:"kobi",name:"Kobi Biton",gender:"M",dob:"",city:"",exp:"YCC SIT 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"050-2709204",email:"",address:""},
-  "maya":{id:"maya",name:"Maya Weinstein",gender:"F",dob:"2005-09-09",city:"Hod HaSharon",exp:"Bereaved children camps, casualties officer",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"058-5010528",email:"vmaya2005@gmail.com",address:""},
-  "bar":{id:"bar",name:"Bar Afgan",gender:"F",dob:"2003-03-22",city:"Kfar Azza",exp:"Canada camp, Scouts, post-hospitalization year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-9921699",email:"barafgan2003@gmail.com",address:""},
-  "hadar":{id:"hadar",name:"Hadar Rannan",gender:"F",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-3218553",email:"",address:""},
-  "sagiv":{id:"sagiv",name:"Sagiv Sharabi",gender:"M",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-7723002",email:"",address:""},
-  "asaf":{id:"asaf",name:"Asaf Goldfisher",gender:"M",dob:"",city:"",exp:"YCC SIT 2025 → MASAD SIT 2026",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-8730105",email:"",address:""},
-  "nitzan":{id:"nitzan",name:"Nitzan Zehavi",gender:"M",dob:"",city:"",exp:"Wingate IVOW 2025",returning:true,maybe:false,role:"Team Lead",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-4522171",email:"",address:""},
-  "shani":{id:"shani",name:"Shani Chaznov",gender:"F",dob:"2002-09-06",city:"Jerusalem",exp:"Scouts head-gdud, camps, service year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Sister of Nir Chazanov (Ottawa 2025)",status:"in",phone:"050-5308092",email:"Shanihazanov02@gmail.com",address:""},
-  "ofer":{id:"ofer",name:"Ofer Gabai",gender:"M",dob:"2003-03-08",city:"Jerusalem",exp:"Forest kindergarten 3-6, Kibbutz Yahel 7-18",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Brother of Shahar Gabay (CBB 2025)",status:"in",phone:"050-6713313",email:"ofergabay0803@gmail.com",address:""},
-  "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-7207798",email:"",address:""},
-  "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Beer Sheva",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-3381241",email:"lifshitzsha@gmail.com",address:""},
-  "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"053-8226713",email:"Netageorgi@gmail.com",address:""},
-  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus",phone:"054-2208014",email:"Saharbinyamin913@gmail.com",address:""},
+  "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-7451134",email:"yaelpar0808@gmail.com",address:"",shabbat:false},
+  "hania":{id:"hania",name:"Hania Alfi",gender:"F",dob:"1999-11-01",city:"Givat Shmuel",exp:"Bnei Akiva, shlichut, youth counseling",returning:false,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-6465840",email:"Chenyaalafi@gmail.com",address:"",shabbat:false},
+  "tehila":{id:"tehila",name:"Tehila Gal",gender:"F",dob:"2002-12-18",city:"Netanya",exp:"Bnei Akiva",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-4894919",email:"tehilagal3@gmail.com",address:"",shabbat:false},
+  "yaar":{id:"yaar",name:"Yaar Ben Shalom",gender:"M",dob:"2004-01-13",city:"Kiryat Anavim",exp:"Summer camp counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"058-5000389",email:"yaer999@gmail.com",address:"",shabbat:false},
+  "eilon":{id:"eilon",name:"Eilon",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:"",shabbat:false},
+  "gal":{id:"gal",name:"Gal",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:"",shabbat:false},
+  "tomer":{id:"tomer",name:"Tomer Porat",gender:"M",dob:"",city:"",exp:"CBB SIT 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"050-7103325",email:"",address:"",shabbat:false},
+  "shila":{id:"shila",name:"Shila Segev",gender:"M",dob:"2002-07-29",city:"Dimona",exp:"Bnei Akiva, HaShomer HaChadash, ADHD children",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-9097519",email:"Shilosegev@gmail.com",address:"",shabbat:false},
+  "lior":{id:"lior",name:"Lior Glam",gender:"F",dob:"2004-12-16",city:"Harish",exp:"IVOW alumna, day camp ages 3-15",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5551147",email:"liorglam20@gmail.com",address:"",shabbat:false},
+  "daniela":{id:"daniela",name:"Daniela Naor",gender:"F",dob:"2005-03-29",city:"Hod HaSharon",exp:"Piano, Education Corps, Gesharim",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5824311",email:"naor.dundush@gmail.com",address:"",shabbat:false},
+  "ofek":{id:"ofek",name:"Ofek Gani",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:"",shabbat:false},
+  "adar":{id:"adar",name:"Adar Buchris",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-6702478",email:"",address:"",shabbat:false},
+  "gili":{id:"gili",name:"Gili Tzvi",gender:"F",dob:"2004-11-08",city:"Gan Yavne",exp:"YCC alumna, substitute teacher",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-3455101",email:"gilitzvii15@gmail.com",address:"",shabbat:false},
+  "itai":{id:"itai",name:"Itai Hazut",gender:"M",dob:"2003-02-14",city:"Yavne",exp:"Military boarding school, counselor cert, biathlon",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5279201",email:"Itayhazoot@gmail.com",address:"",shabbat:false},
+  "dvir":{id:"dvir",name:"Dvir Maimon",gender:"M",dob:"2001-04-04",city:"Sderot",exp:"Scouts cmdr, Paran Mechina",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-5511407",email:"Dvirmimon123@gmail.com",address:"",shabbat:false},
+  "ziv":{id:"ziv",name:"Ziv Amar",gender:"M",dob:"2003-11-29",city:"Lehavim",exp:"Children biathlon gr.1-6, Yahalom unit",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"052-6212286",email:"Zivamar2003@gmail.com",address:"",shabbat:false},
+  "kobi":{id:"kobi",name:"Kobi Biton",gender:"M",dob:"",city:"",exp:"YCC SIT 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"050-2709204",email:"",address:"",shabbat:false},
+  "maya":{id:"maya",name:"Maya Weinstein",gender:"F",dob:"2005-09-09",city:"Hod HaSharon",exp:"Bereaved children camps, casualties officer",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"058-5010528",email:"vmaya2005@gmail.com",address:"",shabbat:false},
+  "bar":{id:"bar",name:"Bar Afgan",gender:"F",dob:"2003-03-22",city:"Kfar Azza",exp:"Canada camp, Scouts, post-hospitalization year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-9921699",email:"barafgan2003@gmail.com",address:"",shabbat:false},
+  "hadar":{id:"hadar",name:"Hadar Rannan",gender:"F",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-3218553",email:"",address:"",shabbat:false},
+  "sagiv":{id:"sagiv",name:"Sagiv Sharabi",gender:"M",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-7723002",email:"",address:"",shabbat:false},
+  "asaf":{id:"asaf",name:"Asaf Goldfisher",gender:"M",dob:"",city:"",exp:"YCC SIT 2025 → MASAD SIT 2026",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-8730105",email:"",address:"",shabbat:false},
+  "nitzan":{id:"nitzan",name:"Nitzan Zehavi",gender:"M",dob:"",city:"",exp:"Wingate IVOW 2025",returning:true,maybe:false,role:"Team Lead",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"052-4522171",email:"",address:"",shabbat:false},
+  "shani":{id:"shani",name:"Shani Chaznov",gender:"F",dob:"2002-09-06",city:"Jerusalem",exp:"Scouts head-gdud, camps, service year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Sister of Nir Chazanov (Ottawa 2025)",status:"in",phone:"050-5308092",email:"Shanihazanov02@gmail.com",address:"",shabbat:false},
+  "ofer":{id:"ofer",name:"Ofer Gabai",gender:"M",dob:"2003-03-08",city:"Jerusalem",exp:"Forest kindergarten 3-6, Kibbutz Yahel 7-18",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Brother of Shahar Gabay (CBB 2025)",status:"in",phone:"050-6713313",email:"ofergabay0803@gmail.com",address:"",shabbat:false},
+  "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-7207798",email:"",address:"",shabbat:false},
+  "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Beer Sheva",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-3381241",email:"lifshitzsha@gmail.com",address:"",shabbat:false},
+  "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"053-8226713",email:"Netageorgi@gmail.com",address:"",shabbat:false},
+  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus",phone:"054-2208014",email:"Saharbinyamin913@gmail.com",address:"",shabbat:false},
 };
 
 const TEAMS_INIT=[
@@ -299,7 +299,7 @@ function App(){
   const addStaff=(staffData)=>{
     snapshot();
     const id=staffData.name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"")+"-"+Date.now().toString(36);
-    const newStaff={id,name:staffData.name,gender:staffData.gender||"M",dob:staffData.dob||"",city:staffData.city||"",exp:staffData.exp||"",returning:false,maybe:false,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:staffData.phone||"",email:staffData.email||"",address:staffData.address||""};
+    const newStaff={id,name:staffData.name,gender:staffData.gender||"M",dob:staffData.dob||"",city:staffData.city||"",exp:staffData.exp||"",returning:false,maybe:false,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:staffData.phone||"",email:staffData.email||"",address:staffData.address||"",shabbat:false};
     const newAll={...all,[id]:newStaff};
     const newPool=[...pool,id];
     setAll(newAll);setPool(newPool);push(newAll,teams,newPool);
@@ -321,10 +321,10 @@ function App(){
   /* ── Export ─────────────────────────────────────────────────── */
 
   const getExportRows=()=>{
-    const headers=["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"];
+    const headers=["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Shabbat","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"];
     const rows=[];
-    teams.forEach(team=>{team.members.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});});
-    pool.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});
+    teams.forEach(team=>{team.members.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});});
+    pool.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});
     return{headers,rows};
   };
 
@@ -345,8 +345,8 @@ function App(){
     ws["!cols"]=colWidths;
     XLSX.utils.book_append_sheet(wb,ws,"All Staff");
     teams.forEach(team=>{
-      const tRows=team.members.map(id=>all[id]).filter(Boolean).map(c=>[c.name,c.gender,c.dob?getAge(c.dob):"",c.city,c.rating?RATING_L[c.rating]:"",c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||""]);
-      const tHeaders=["Name","Gender","Age","City","Rating","Returning","Maybe","Role","Phone","Email","Experience"];
+      const tRows=team.members.map(id=>all[id]).filter(Boolean).map(c=>[c.name,c.gender,c.dob?getAge(c.dob):"",c.city,c.rating?RATING_L[c.rating]:"",c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||""]);
+      const tHeaders=["Name","Gender","Age","City","Rating","Returning","Maybe","Shabbat","Role","Phone","Email","Experience"];
       const tws=XLSX.utils.aoa_to_sheet([tHeaders,...tRows]);
       tws["!cols"]=tHeaders.map((_,i)=>({wch:Math.max(tHeaders[i].length,Math.max(...tRows.map(r=>(r[i]||"").toString().length),5))+2}));
       XLSX.utils.book_append_sheet(wb,tws,team.name.slice(0,31));
@@ -486,6 +486,7 @@ function App(){
             <span style={{color:"#93C5FD"}}>↩ Ret. ({allArr.filter(c=>c.returning).length})</span>
             <span style={{color:"#FCD34D"}}>⏳ Pend. ({allArr.filter(c=>c.maybe).length})</span>
             <span style={{color:"#A78BFA"}}>★ Lead ({allArr.filter(c=>c.role).length})</span>
+            <span style={{color:"#C4B5FD"}}>✡ Shab. ({allArr.filter(c=>c.shabbat).length})</span>
             <span style={{color:"#86EFAC"}}>1 Exc ({allArr.filter(c=>c.rating===1).length})</span>
             <span style={{color:"#FDE68A"}}>2 Good ({allArr.filter(c=>c.rating===2).length})</span>
             <span style={{color:"#FCA5A5"}}>3 Avg ({allArr.filter(c=>c.rating===3).length})</span>
@@ -758,6 +759,7 @@ function App(){
                     {c.role&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>★ {c.role}</span>}
                     {c.maybe?<span style={{background:"#F59E0B",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⏳ Pending</span>:c.returning?<span style={{background:"#2563EB",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>↩ Returning 2025</span>:null}
                     {c.status==="plus"&&<span style={{background:"#D97706",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⭐ Plus</span>}
+                    {c.shabbat&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>✡ Shabbat</span>}
                   </div>
                   <div style={{fontSize:11,color:"#777"}}>{c.city||"—"}{c.dob?` · Age ${getAge(c.dob)}`:""} · {c.gender==="F"?"Female":"Male"}</div>
                   {c.note&&<div style={{marginTop:4,background:"#EEF4FF",border:"1px solid #93C5FD",borderRadius:5,padding:"3px 8px",fontSize:10.5,color:"#1E40AF"}}>🔗 {c.note}</div>}
@@ -818,9 +820,10 @@ function App(){
                 </div>
               </div>
 
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
                 <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={c.returning} onChange={e=>updC(openCard,{returning:e.target.checked})}/><span style={{fontWeight:600,color:"#2563EB"}}>↩ Returning</span></label>
                 <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={c.maybe} onChange={e=>updC(openCard,{maybe:e.target.checked})}/><span style={{fontWeight:600,color:"#D97706"}}>⏳ Maybe</span></label>
+                <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={!!c.shabbat} onChange={e=>updC(openCard,{shabbat:e.target.checked})}/><span style={{fontWeight:600,color:"#7C3AED"}}>✡ Shabbat</span></label>
               </div>
 
               <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
@@ -899,6 +902,7 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
         <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px",marginRight:3}}>★</span>}
           {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px",marginRight:3}}>⏳</span>}
+          {c.shabbat&&<span style={{fontSize:8,background:"#EDE9FE",color:"#7C3AED",borderRadius:3,padding:"1px 3px",marginRight:3}}>✡</span>}
           {c.name}
         </div>
         <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
