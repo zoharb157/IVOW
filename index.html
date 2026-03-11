@@ -226,7 +226,14 @@ function App(){
             receivedState=true;
             const s=migrateState(msg.payload);
             if(s.all)setAll(s.all);
-            if(s.teams)setTeams(s.teams);
+            if(s.teams){
+              // Preserve targetF/targetM from TEAMS_INIT if missing in DB state
+              const merged=s.teams.map(t=>{
+                const init=TEAMS_INIT.find(ti=>ti.id===t.id);
+                return {...t,targetF:t.targetF??init?.targetF??0,targetM:t.targetM??init?.targetM??0};
+              });
+              setTeams(merged);
+            }
             if(s.pool!=null)setPool(s.pool);
             if(s.activityLog){logRef.current=s.activityLog;setActivityLog(s.activityLog);}
             setLastSync(new Date().toLocaleTimeString());
