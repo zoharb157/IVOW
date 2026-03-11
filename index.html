@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',Arial,sans-serif;background:#EDEAE5;color:#111;}
@@ -146,6 +147,8 @@ function App(){
   const [toast,setToast]=useState(null);
   const [sortCol,setSortCol]=useState(null);
   const [sortDir,setSortDir]=useState("asc");
+  const [filterRating,setFilterRating]=useState("all");
+  const [filterStatus,setFilterStatus]=useState("all");
   const wsRef=useRef(null);
   const logRef=useRef([]);
   const undoStack=useRef([]);
@@ -314,15 +317,40 @@ function App(){
     setOpenCard(null);setConfirmDelete(null);
   };
 
-  /* ── CSV Export ──────────────────────────────────────────────── */
+  /* ── Export ─────────────────────────────────────────────────── */
+
+  const getExportRows=()=>{
+    const headers=["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"];
+    const rows=[];
+    teams.forEach(team=>{team.members.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});});
+    pool.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});
+    return{headers,rows};
+  };
 
   const exportCSV=()=>{
-    const rows=[["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"]];
-    teams.forEach(team=>{team.members.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone,c.email,c.exp,c.strengths,c.weaknesses,c.notes]);});});
-    pool.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone,c.email,c.exp,c.strengths,c.weaknesses,c.notes]);});
-    const csv=rows.map(r=>r.map(v=>`"${(v||"").toString().replace(/"/g,'""')}"`).join(",")).join("\n");
+    const{headers,rows}=getExportRows();
+    const all2=[headers,...rows];
+    const csv=all2.map(r=>r.map(v=>`"${(v||"").toString().replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`ivow-2026-staff-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href);
+  };
+
+  const exportExcel=()=>{
+    const{headers,rows}=getExportRows();
+    const wb=XLSX.utils.book_new();
+    const mainData=[headers,...rows];
+    const ws=XLSX.utils.aoa_to_sheet(mainData);
+    const colWidths=headers.map((_,i)=>({wch:Math.max(headers[i].length,Math.max(...rows.map(r=>(r[i]||"").toString().length)))+2}));
+    ws["!cols"]=colWidths;
+    XLSX.utils.book_append_sheet(wb,ws,"All Staff");
+    teams.forEach(team=>{
+      const tRows=team.members.map(id=>all[id]).filter(Boolean).map(c=>[c.name,c.gender,c.dob?getAge(c.dob):"",c.city,c.rating?RATING_L[c.rating]:"",c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||""]);
+      const tHeaders=["Name","Gender","Age","City","Rating","Returning","Maybe","Role","Phone","Email","Experience"];
+      const tws=XLSX.utils.aoa_to_sheet([tHeaders,...tRows]);
+      tws["!cols"]=tHeaders.map((_,i)=>({wch:Math.max(tHeaders[i].length,Math.max(...tRows.map(r=>(r[i]||"").toString().length),5))+2}));
+      XLSX.utils.book_append_sheet(wb,tws,team.name.slice(0,31));
+    });
+    XLSX.writeFile(wb,`ivow-2026-staff-${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
   /* ── Keyboard Shortcuts ──────────────────────────────────────── */
@@ -392,16 +420,23 @@ function App(){
       r1:ms.filter(c=>c.rating===1).length,r2:ms.filter(c=>c.rating===2).length,r3:ms.filter(c=>c.rating===3).length};
   };
 
-  const filteredPool=pool.filter(id=>{
-    const c=all[id];if(!c)return false;
+  const passesFilter=(c)=>{
+    if(!c)return false;
     if(filterGender!=="all"&&c.gender!==filterGender)return false;
-    if(search&&!c.name.toLowerCase().includes(search.toLowerCase()))return false;
+    if(filterRating!=="all"&&c.rating!==filterRating)return false;
+    if(filterStatus==="returning"&&!c.returning)return false;
+    if(filterStatus==="maybe"&&!c.maybe)return false;
+    if(filterStatus==="plus"&&c.status!=="plus")return false;
+    if(filterStatus==="new"&&(c.returning||c.maybe||c.status==="plus"))return false;
+    if(search&&!matchesSearch(c,search))return false;
     return true;
-  });
+  };
+  const filteredPool=pool.filter(id=>passesFilter(all[id]));
+  const hasActiveFilter=filterGender!=="all"||filterRating!=="all"||filterStatus!=="all"||search;
 
   const totalAssigned=teams.reduce((s,t)=>s+t.members.length,0);
   const statusColor=syncStatus==="live"?"#16A34A":syncStatus==="connecting"?"#F59E0B":"#DC2626";
-  const statusText=syncStatus==="live"?`🟢 Live${lastSync?" · "+lastSync:""}`:syncStatus==="connecting"?"🟡 Connecting...":"🔴 Offline — reconnecting...";
+  const statusText=syncStatus==="live"?`✓ Saved${lastSync?" "+lastSync:""}`:syncStatus==="connecting"?"⏳ Connecting...":"⚠ Offline";
 
   /* ── Render ──────────────────────────────────────────────────── */
 
@@ -429,7 +464,7 @@ function App(){
           <span style={{fontSize:isMobile?13:16,fontWeight:800}}>🏕 IVOW 2026</span>
           {!isMobile&&<span style={{opacity:0.35}}>|</span>}
           <span style={{fontSize:isMobile?9:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
-          {!isMobile&&<span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>}
+          <span style={{fontSize:isMobile?8:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>
         </div>
         <div style={{display:"flex",gap:2,alignItems:"center"}}>
           <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{background:canUndo?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.2)",color:canUndo?"white":"rgba(255,255,255,0.3)",borderRadius:7,padding:isMobile?"4px 7px":"4px 10px",cursor:canUndo?"pointer":"default",fontSize:isMobile?14:12,fontWeight:700}}>↶</button>
@@ -471,6 +506,13 @@ function App(){
               <div style={{display:"flex",gap:4,marginTop:4}}>
                 {["all","F","M"].map(g=>(<button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>{g==="all"?"All":g==="F"?"♀":"♂"}</button>))}
               </div>
+              <div style={{display:"flex",gap:3,marginTop:3}}>
+                {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
+              </div>
+              <div style={{display:"flex",gap:3,marginTop:3}}>
+                {[["all","All"],["returning","↩"],["maybe","⏳"],["plus","⭐"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
+              </div>
+              {hasActiveFilter&&<button onClick={()=>{setFilterGender("all");setFilterRating("all");setFilterStatus("all");setSearch("");}} style={{marginTop:3,width:"100%",padding:"3px 0",borderRadius:4,border:"1px dashed #D2CAC0",background:"transparent",color:"#999",cursor:"pointer",fontSize:10}}>✕ Clear filters</button>}
             </div>
             {!isMobile&&<div style={{padding:"4px 8px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</span>
@@ -522,12 +564,12 @@ function App(){
                     </div>
                     {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button onClick={()=>handleMobileDrop(team.id)} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
-                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
                         <div key={`ef-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♀ Open spot</span></div>
                       ))}
                       {(females.length>0||((team.targetF||0)-females.length)>0)&&(males.length>0||((team.targetM||0)-males.length)>0)&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
-                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetM||0)-males.length)}).map((_,i)=>(
                         <div key={`em-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♂ Open spot</span></div>
                       ))}
@@ -612,6 +654,7 @@ function App(){
             <span style={{fontSize:15,fontWeight:800}}>📋 Full Overview ({sortedRows.length})</span>
             <div className="no-print" style={{display:"flex",gap:6,alignItems:"center"}}>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Filter..." style={{padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none",width:160}}/>
+              <button onClick={exportExcel} style={{background:"#16A34A",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📊 Excel</button>
               <button onClick={exportCSV} style={{background:"#0f172a",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📥 CSV</button>
               <button onClick={()=>window.print()} style={{background:"#6B7280",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>🖨</button>
             </div>
@@ -836,7 +879,7 @@ function App(){
 
 /* ─── StaffCard Component ───────────────────────────────────────────── */
 
-function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap}){
+function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap,dimmed}){
   if(!c)return null;
   const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":c.status==="plus"?"#FEFCE8":"white";
   const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":c.status==="plus"?"#FDE68A":"#E2D9CE";
@@ -844,7 +887,7 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
   const isMatch=search&&matchesSearch(c,search);
   return(
     <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd} onClick={onOpen} onDragOver={e=>{e.preventDefault();e.stopPropagation();}} onDrop={e=>{e.stopPropagation();if(onSwapDrop)onSwapDrop(c.id,from);}} className={isMatch?"search-match":""}
-      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.1s"}}
+      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.15s",opacity:dimmed?0.3:1}}
       onMouseEnter={e=>{if(!isMobile){e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}}
       onMouseLeave={e=>{if(!isMobile){e.currentTarget.style.boxShadow=isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001";e.currentTarget.style.transform="none";}}}>
       <div style={{width:22,height:22,borderRadius:"50%",background:avatarBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"white",flexShrink:0}}>{c.name[0]}</div>
@@ -854,7 +897,8 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
           {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px",marginRight:3}}>⏳</span>}
           {c.name}
         </div>
-        <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}</div>
+        <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
+        {c.exp&&<div style={{fontSize:7.5,color:"#C4B5A4",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{c.exp}</div>}
       </div>
       <div style={{display:"flex",gap:2,flexShrink:0}}>
         {[1,2,3].map(r=>(<button key={r} onClick={e=>{e.stopPropagation();onRate(r);}} style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>))}
