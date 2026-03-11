@@ -124,6 +124,7 @@ function App(){
   const [authed,setAuthed]=useState(()=>localStorage.getItem("ivow_auth")===APP_PASSWORD);
   const [pwInput,setPwInput]=useState("");
   const [pwError,setPwError]=useState(false);
+  const [showPw,setShowPw]=useState(false);
   const [all,setAll]=useState(STAFF_INIT);
   const [teams,setTeams]=useState(TEAMS_INIT);
   const [pool,setPool]=useState([]);
@@ -447,8 +448,11 @@ function App(){
         <div style={{fontSize:20,fontWeight:800,color:"#0f172a",marginBottom:4}}>IVOW 2026</div>
         <div style={{fontSize:12,color:"#999",marginBottom:20}}>Staff Assignment Board</div>
         <form onSubmit={e=>{e.preventDefault();handleLogin();}}>
-          <input type="password" value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}} placeholder="Enter password" autoFocus
-            style={{width:"100%",padding:"10px 14px",borderRadius:8,border:`2px solid ${pwError?"#DC2626":"#E5E7EB"}`,fontSize:14,outline:"none",textAlign:"center",marginBottom:8,boxSizing:"border-box"}}/>
+          <div style={{position:"relative",marginBottom:8}}>
+            <input type={showPw?"text":"password"} value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}} placeholder="Enter password" autoFocus
+              style={{width:"100%",padding:"10px 14px",paddingRight:40,borderRadius:8,border:`2px solid ${pwError?"#DC2626":"#E5E7EB"}`,fontSize:14,outline:"none",textAlign:"center",boxSizing:"border-box"}}/>
+            <button type="button" onClick={()=>setShowPw(!showPw)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,opacity:0.5,padding:0}}>{showPw?"🙈":"👁"}</button>
+          </div>
           {pwError&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>Incorrect password</div>}
           <button type="submit" style={{width:"100%",padding:"10px",background:"#0f172a",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>Enter</button>
         </form>
