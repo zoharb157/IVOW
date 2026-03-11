@@ -8,10 +8,15 @@ const PORT = process.env.PORT || 3000;
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zrqcyjhzxdqvarirjcdh.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_BCYYO20bTf_4_dG5otk3vw_yYps1UPr';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase;
+try {
+  supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (err) {
+  console.error('Failed to create Supabase client:', err.message);
+}
 
-// In-memory cache
 let sharedState = null;
+let saveTimer = null;
 
 // Extract STAFF_INIT from index.html so code updates flow into DB
 function parseStaffInit() {
@@ -19,15 +24,10 @@ function parseStaffInit() {
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     const match = html.match(/const STAFF_INIT\s*=\s*(\{[\s\S]*?\n\};)/);
     if (!match) return null;
-    // Convert JS object literal to JSON-parseable string
     let raw = match[1].replace(/;\s*$/, '');
-    // Add quotes around unquoted keys
     raw = raw.replace(/(\s)(\w[\w-]*)(\s*:)/g, '$1"$2"$3');
-    // Replace single quotes with double quotes
     raw = raw.replace(/'/g, '"');
-    // Handle trailing commas
     raw = raw.replace(/,(\s*[}\]])/g, '$1');
-    // Handle null values
     raw = raw.replace(/:\s*null/g, ':null');
     return JSON.parse(raw);
   } catch (e) {
@@ -43,12 +43,10 @@ function mergeDefaults(dbState) {
   let changed = false;
   for (const [id, def] of Object.entries(defaults)) {
     if (!dbState.all[id]) {
-      // New staff member not in DB — add them
       dbState.all[id] = def;
       changed = true;
       console.log(`  Merged new staff: ${def.name}`);
     } else {
-      // Existing staff — fill in empty fields only
       for (const [key, val] of Object.entries(def)) {
         if (val && (!dbState.all[id][key] || dbState.all[id][key] === '')) {
           dbState.all[id][key] = val;
@@ -61,35 +59,67 @@ function mergeDefaults(dbState) {
   return dbState;
 }
 
-// Load state from Supabase on startup
 async function loadState() {
+  if (!supabase) return;
   const { data, error } = await supabase
     .from('app_state')
     .select('data')
     .eq('id', 'main')
     .single();
-  if (data && data.data && Object.keys(data.data).length > 0) {
+
+  if (error) {
+    console.warn('Supabase load warning:', error.message);
+    return;
+  }
+
+  if (data?.data && Object.keys(data.data).length > 0) {
     sharedState = mergeDefaults(data.data);
-    // Save merged state back to DB
     await saveState(sharedState);
-    console.log('State loaded from Supabase');
+    const staffCount = sharedState.all ? Object.keys(sharedState.all).length : 0;
+    const teamCount = sharedState.teams ? sharedState.teams.length : 0;
+    console.log(`State loaded from Supabase (${staffCount} staff, ${teamCount} teams)`);
   } else {
-    console.log('No saved state found, starting fresh');
+    console.log('No saved state found — first client to connect will seed the DB');
   }
 }
 
-// Save state to Supabase
+function debouncedSave(state) {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => saveState(state), 150);
+}
+
 async function saveState(state) {
+  if (!supabase) return;
   const { error } = await supabase
     .from('app_state')
     .upsert({ id: 'main', data: state, updated_at: new Date().toISOString() });
   if (error) console.error('Supabase save error:', error.message);
 }
 
+const MIME = {
+  '.html': 'text/html',
+  '.js':   'application/javascript',
+  '.css':  'text/css',
+  '.json': 'application/json',
+  '.png':  'image/png',
+  '.svg':  'image/svg+xml',
+  '.ico':  'image/x-icon',
+};
+
 const server = http.createServer((req, res) => {
   if (req.url === '/' || req.url === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     fs.createReadStream(path.join(__dirname, 'index.html')).pipe(res);
+    return;
+  }
+
+  const safePath = path.normalize(req.url).replace(/^(\.\.[/\\])+/, '');
+  const filePath = path.join(__dirname, 'public', safePath);
+  const ext = path.extname(filePath).toLowerCase();
+
+  if (MIME[ext] && fs.existsSync(filePath)) {
+    res.writeHead(200, { 'Content-Type': MIME[ext] });
+    fs.createReadStream(filePath).pipe(res);
   } else {
     res.writeHead(404);
     res.end('Not found');
@@ -101,43 +131,48 @@ const clients = new Set();
 
 wss.on('connection', (ws) => {
   clients.add(ws);
-  console.log(`Client connected. Total: ${clients.size}`);
+  console.log(`Client connected (${clients.size} total)`);
 
-  // Send current state to new client
   if (sharedState) {
     ws.send(JSON.stringify({ type: 'state', payload: sharedState }));
+  } else {
+    ws.send(JSON.stringify({ type: 'need_init' }));
   }
 
-  ws.on('message', (data) => {
+  ws.on('message', (raw) => {
     try {
-      const msg = JSON.parse(data);
-      if (msg.type === 'update') {
+      const msg = JSON.parse(raw);
+      if (msg.type === 'update' && msg.payload) {
         sharedState = msg.payload;
-        // Save to Supabase
-        saveState(sharedState);
-        // Broadcast to all OTHER clients
+        debouncedSave(sharedState);
         clients.forEach(client => {
           if (client !== ws && client.readyState === 1) {
             client.send(JSON.stringify({ type: 'state', payload: sharedState }));
           }
         });
       }
-    } catch(e) {}
+    } catch (e) {
+      console.error('Bad WS message:', e.message);
+    }
   });
 
   ws.on('close', () => {
     clients.delete(ws);
-    console.log(`Client disconnected. Total: ${clients.size}`);
+    console.log(`Client disconnected (${clients.size} total)`);
+  });
+
+  ws.on('error', (err) => {
+    console.error('WS error:', err.message);
+    clients.delete(ws);
   });
 });
 
-// Load state then start server
 loadState().catch(err => {
   console.error('Failed to load state from Supabase:', err.message);
 }).finally(() => {
   server.listen(PORT, () => {
     console.log(`\n🏕  IVOW 2026 Server running at:`);
     console.log(`   Local:   http://localhost:${PORT}`);
-    console.log(`   DB:      Supabase connected`);
+    console.log(`   DB:      ${supabase ? 'Supabase connected' : 'Supabase unavailable'}`);
   });
 });
