@@ -21,15 +21,11 @@ let saveTimer = null;
 // Extract STAFF_INIT from index.html so code updates flow into DB
 function parseStaffInit() {
   try {
+    const vm = require('vm');
     const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
     const match = html.match(/const STAFF_INIT\s*=\s*(\{[\s\S]*?\n\};)/);
     if (!match) return null;
-    let raw = match[1].replace(/;\s*$/, '');
-    raw = raw.replace(/(\s)(\w[\w-]*)(\s*:)/g, '$1"$2"$3');
-    raw = raw.replace(/'/g, '"');
-    raw = raw.replace(/,(\s*[}\]])/g, '$1');
-    raw = raw.replace(/:\s*null/g, ':null');
-    return JSON.parse(raw);
+    return vm.runInNewContext('(' + match[1].replace(/;\s*$/, '') + ')');
   } catch (e) {
     console.error('Failed to parse STAFF_INIT:', e.message);
     return null;
