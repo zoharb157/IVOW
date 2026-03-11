@@ -91,7 +91,7 @@ const STAFF_INIT={
   "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"054-7207798",email:"",address:"",shabbat:false},
   "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Beer Sheva",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-3381241",email:"lifshitzsha@gmail.com",address:"",shabbat:false},
   "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"053-8226713",email:"Netageorgi@gmail.com",address:"",shabbat:false},
-  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus",phone:"054-2208014",email:"Saharbinyamin913@gmail.com",address:"",shabbat:false},
+  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"054-2208014",email:"Saharbinyamin913@gmail.com",address:"",shabbat:false},
 };
 
 const TEAMS_INIT=[
@@ -427,8 +427,7 @@ function App(){
     if(filterRating!=="all"&&c.rating!==filterRating)return false;
     if(filterStatus==="returning"&&!c.returning)return false;
     if(filterStatus==="maybe"&&!c.maybe)return false;
-    if(filterStatus==="plus"&&c.status!=="plus")return false;
-    if(filterStatus==="new"&&(c.returning||c.maybe||c.status==="plus"))return false;
+    if(filterStatus==="new"&&(c.returning||c.maybe))return false;
     if(search&&!matchesSearch(c,search))return false;
     return true;
   };
@@ -515,7 +514,7 @@ function App(){
                 {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
               </div>
               <div style={{display:"flex",gap:3,marginTop:3}}>
-                {[["all","All"],["returning","↩"],["maybe","⏳"],["plus","⭐"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
+                {[["all","All"],["returning","↩"],["maybe","⏳"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
               </div>
               {hasActiveFilter&&<button onClick={()=>{setFilterGender("all");setFilterRating("all");setFilterStatus("all");setSearch("");}} style={{marginTop:3,width:"100%",padding:"3px 0",borderRadius:4,border:"1px dashed #D2CAC0",background:"transparent",color:"#999",cursor:"pointer",fontSize:10}}>✕ Clear filters</button>}
             </div>
@@ -690,7 +689,7 @@ function App(){
                       <td style={{padding:"6px 11px"}}><span style={{background:c.teamId==="pool"?"#94A3B8":col.accent,color:"white",borderRadius:4,padding:"2px 7px",fontSize:10.5,fontWeight:700}}>{c.teamName}</span></td>
                       <td style={{padding:"6px 11px"}}>{c.rating?<span style={{background:RATING_C[c.rating],color:"white",borderRadius:4,padding:"2px 8px",fontSize:10.5,fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{color:"#DDD"}}>—</span>}</td>
                       <td style={{padding:"6px 11px",fontSize:10.5}}>
-                        {c.maybe?<span style={{color:"#D97706"}}>⏳ Pending</span>:c.returning?<span style={{color:"#2563EB"}}>↩ Returning</span>:c.status==="plus"?<span style={{color:"#D97706"}}>⭐ Plus</span>:<span style={{color:"#16A34A"}}>✅ New</span>}
+                        {c.maybe?<span style={{color:"#D97706"}}>⏳ Pending</span>:c.returning?<span style={{color:"#2563EB"}}>↩ Returning</span>:<span style={{color:"#16A34A"}}>✅ New</span>}
                       </td>
                     </tr>
                   );
@@ -758,7 +757,6 @@ function App(){
                     <span style={{fontSize:17,fontWeight:800}}>{c.name}</span>
                     {c.role&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>★ {c.role}</span>}
                     {c.maybe?<span style={{background:"#F59E0B",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⏳ Pending</span>:c.returning?<span style={{background:"#2563EB",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>↩ Returning 2025</span>:null}
-                    {c.status==="plus"&&<span style={{background:"#D97706",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⭐ Plus</span>}
                     {c.shabbat&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>🕎 Shabbat</span>}
                   </div>
                   <div style={{fontSize:11,color:"#777"}}>{c.city||"—"}{c.dob?` · Age ${getAge(c.dob)}`:""} · {c.gender==="F"?"Female":"Male"}</div>
@@ -888,9 +886,9 @@ function App(){
 
 function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap,dimmed}){
   if(!c)return null;
-  const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":c.status==="plus"?"#FEFCE8":"white";
-  const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":c.status==="plus"?"#FDE68A":"#E2D9CE";
-  const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":c.status==="plus"?"#D97706":(c.gender==="F"?"#F9A8D4":"#93C5FD");
+  const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":"white";
+  const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":"#E2D9CE";
+  const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":(c.gender==="F"?"#F9A8D4":"#93C5FD");
   const isMatch=search&&matchesSearch(c,search);
   return(
     <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd} onClick={onOpen} onDragOver={e=>{e.preventDefault();e.stopPropagation();}} onDrop={e=>{e.stopPropagation();if(onSwapDrop)onSwapDrop(c.id,from);}} className={isMatch?"search-match":""}
