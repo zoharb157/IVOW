@@ -225,7 +225,14 @@ function App(){
           if(msg.type==="state"&&msg.payload){
             receivedState=true;
             const s=migrateState(msg.payload);
-            if(s.all)setAll(s.all);
+            if(s.all){
+              const merged={...s.all};
+              for(const [id,def] of Object.entries(STAFF_INIT)){
+                if(merged[id]){for(const [k,v] of Object.entries(def)){if(v&&v!==''&&(!merged[id][k]||merged[id][k]===''))merged[id][k]=v;}}
+                }
+              }
+              setAll(merged);
+            }
             if(s.teams)setTeams(s.teams);
             if(s.pool!=null)setPool(s.pool);
             if(s.activityLog){logRef.current=s.activityLog;setActivityLog(s.activityLog);}
