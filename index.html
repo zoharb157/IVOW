@@ -65,14 +65,14 @@ const STAFF_INIT={
 };
 
 const TEAMS_INIT=[
-  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:"",targetSize:6},
-  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
-  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:"",targetSize:6},
-  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
-  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetSize:4},
-  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
-  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetSize:5},
+  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:3},
+  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:3},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
 ];
 
 function App(){
@@ -287,22 +287,20 @@ function App(){
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
                       {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
-                      {females.length>0&&males.length>0&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
+                      {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
+                        <div key={`ef-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
+                          style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:dragOver===team.id?"#FDF2F8":"transparent",border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center",transition:"background 0.15s"}}>
+                          <span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♀ Open spot</span>
+                        </div>
+                      ))}
+                      {(females.length>0||((team.targetF||0)-females.length)>0)&&(males.length>0||((team.targetM||0)-males.length)>0)&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
                       {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
-                      {(()=>{
-                        const emptySlots=Math.max(0,(team.targetSize||0)-team.members.length);
-                        return Array.from({length:emptySlots}).map((_,i)=>(
-                          <div key={`empty-${i}`} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:"transparent",border:`1.5px dashed ${col.border}55`,marginBottom:1,minHeight:30,justifyContent:"center"}}>
-                            <span style={{fontSize:10,color:col.border+"99",fontWeight:600}}>+ Empty slot</span>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                    <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:3,marginTop:4}}>
-                      <span style={{fontSize:9,color:"#AAA"}}>Target:</span>
-                      <button onClick={()=>updT(team.id,{targetSize:Math.max(0,(team.targetSize||team.members.length)-1)})} style={{width:16,height:16,borderRadius:3,border:`1px solid ${col.border}77`,background:"white",cursor:"pointer",fontSize:10,fontWeight:700,color:col.accent,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>−</button>
-                      <span style={{fontSize:10,fontWeight:700,color:col.accent,minWidth:14,textAlign:"center"}}>{team.targetSize||team.members.length}</span>
-                      <button onClick={()=>updT(team.id,{targetSize:(team.targetSize||team.members.length)+1})} style={{width:16,height:16,borderRadius:3,border:`1px solid ${col.border}77`,background:"white",cursor:"pointer",fontSize:10,fontWeight:700,color:col.accent,display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>+</button>
+                      {Array.from({length:Math.max(0,(team.targetM||0)-males.length)}).map((_,i)=>(
+                        <div key={`em-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
+                          style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:dragOver===team.id?"#EFF6FF":"transparent",border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center",transition:"background 0.15s"}}>
+                          <span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♂ Open spot</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
