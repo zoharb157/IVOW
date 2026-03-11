@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IVOW 2026 — Staff Assignment</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#EDEAE5;color:#111;}
+  textarea,input{font-family:inherit;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:#CCC;border-radius:3px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+const RATING_C={1:"#16A34A",2:"#D97706",3:"#DC2626"};
+const RATING_L={1:"Excellent",2:"Good",3:"Average"};
+const CAMP_BASE={
+  CBB:{accent:"#D97706",light:"#FEF3C7",border:"#F59E0B",bg:"#FFFBEB"},
+  YCC:{accent:"#16A34A",light:"#DCFCE7",border:"#22C55E",bg:"#F0FDF4"},
+  MASAD:{accent:"#2563EB",light:"#DBEAFE",border:"#3B82F6",bg:"#EFF6FF"},
+  WINGATE:{accent:"#9333EA",light:"#F3E8FF",border:"#A855F7",bg:"#FDF4FF"},
+  OTTAWA:{accent:"#E11D48",light:"#FFE4E6",border:"#F43F5E",bg:"#FFF1F2"},
+};
+function getTeamColor(id){const c=id.split("-")[0];return CAMP_BASE[c]||{accent:"#6366F1",light:"#E0E7FF",border:"#818CF8",bg:"#F8FAFF"};}
+function getAge(dob){if(!dob)return"?";const b=new Date(dob),n=new Date("2026-03-10");let a=n.getFullYear()-b.getFullYear();if(n.getMonth()-b.getMonth()<0||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a;}
+
+const STAFF_INIT={
+  "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "hania":{id:"hania",name:"Hania Alfi",gender:"F",dob:"1999-11-01",city:"Givat Shmuel",exp:"Bnei Akiva, shlichut, youth counseling",returning:false,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "tehila":{id:"tehila",name:"Tehila Gal",gender:"F",dob:"2002-12-18",city:"Netanya",exp:"Bnei Akiva",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "yaar":{id:"yaar",name:"Yaar Ben Shalom",gender:"M",dob:"2004-01-13",city:"Kiryat Anavim",exp:"Summer camp counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "eilon":{id:"eilon",name:"Eilon",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "gal":{id:"gal",name:"Gal",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "tomer":{id:"tomer",name:"Tomer Porat",gender:"M",dob:"",city:"",exp:"CBB SIT 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "shila":{id:"shila",name:"Shila Segev",gender:"M",dob:"2002-07-29",city:"",exp:"Bnei Akiva, HaShomer HaChadash, ADHD children",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "lior":{id:"lior",name:"Lior Glam",gender:"F",dob:"2004-12-16",city:"Harish",exp:"IVOW alumna, day camp ages 3-15",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "daniela":{id:"daniela",name:"Daniela Naor",gender:"F",dob:"2005-03-29",city:"Hod HaSharon",exp:"Piano, Education Corps, Gesharim",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "ofek":{id:"ofek",name:"Ofek Gani",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "adar":{id:"adar",name:"Adar Buchris",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "gili":{id:"gili",name:"Gili Tzvi",gender:"F",dob:"2004-11-08",city:"Gan Yavne",exp:"YCC alumna, substitute teacher",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "itai":{id:"itai",name:"Itai Hazut",gender:"M",dob:"2003-02-14",city:"Yavne",exp:"Military boarding school, counselor cert, biathlon",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "dvir":{id:"dvir",name:"Dvir Maimon",gender:"M",dob:"2001-04-04",city:"Sderot",exp:"Scouts cmdr, Paran Mechina",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "ziv":{id:"ziv",name:"Ziv Amar",gender:"M",dob:"2003-11-29",city:"Lehavim",exp:"Children biathlon gr.1-6, Yahalom unit",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "kobi":{id:"kobi",name:"Kobi Biton",gender:"M",dob:"",city:"",exp:"YCC SIT 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "maya":{id:"maya",name:"Maya Weinstein",gender:"F",dob:"2005-09-09",city:"Hod HaSharon",exp:"Bereaved children camps, casualties officer",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "bar":{id:"bar",name:"Bar Afgan",gender:"F",dob:"2003-03-22",city:"",exp:"Canada camp, Scouts, post-hospitalization year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "hadar":{id:"hadar",name:"Hadar Rannan",gender:"F",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "sagiv":{id:"sagiv",name:"Sagiv Sharabi",gender:"M",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "asaf":{id:"asaf",name:"Asaf Goldfisher",gender:"M",dob:"",city:"",exp:"YCC SIT 2025 → MASAD SIT 2026",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "nitzan":{id:"nitzan",name:"Nitzan Zehavi",gender:"M",dob:"",city:"",exp:"Wingate IVOW 2025",returning:true,maybe:false,role:"Team Lead",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "shani":{id:"shani",name:"Shani Chaznov",gender:"F",dob:"2002-09-06",city:"Jerusalem",exp:"Scouts head-gdud, camps, service year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Sister of Nir Chazanov (Ottawa 2025)",status:"in"},
+  "ofer":{id:"ofer",name:"Ofer Gabai",gender:"M",dob:"2003-03-08",city:"Jerusalem",exp:"Forest kindergarten 3-6, Kibbutz Yahel 7-18",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Brother of Shahar Gabay (CBB 2025)",status:"in"},
+  "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
+  "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Arkhild",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
+  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus"},
+};
+
+const TEAMS_INIT=[
+  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:""},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:""},
+  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:""},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:""},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:""},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:""},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:""},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:""},
+];
+
+function App(){
+  const [all,setAll]=useState(STAFF_INIT);
+  const [teams,setTeams]=useState(TEAMS_INIT);
+  const [pool,setPool]=useState([]);
+  const [dragInfo,setDragInfo]=useState(null);
+  const [dragOver,setDragOver]=useState(null);
+  const [tab,setTab]=useState("board");
+  const [openCard,setOpenCard]=useState(null);
+  const [editingTeam,setEditingTeam]=useState(null);
+  const [editingName,setEditingName]=useState("");
+  const [search,setSearch]=useState("");
+  const [filterGender,setFilterGender]=useState("all");
+  const [syncStatus,setSyncStatus]=useState("connecting");
+  const [lastSync,setLastSync]=useState(null);
+  const wsRef=useRef(null);
+  const ignoreRef=useRef(false);
+
+  // ── WebSocket ─────────────────────────────────────────────────────────────
+  useEffect(()=>{
+    const connect=()=>{
+      const ws=new WebSocket(`ws://${location.host}`);
+      wsRef.current=ws;
+      ws.onopen=()=>setSyncStatus("live");
+      ws.onclose=()=>{setSyncStatus("offline");setTimeout(connect,2000);};
+      ws.onerror=()=>setSyncStatus("offline");
+      ws.onmessage=(e)=>{
+        try{
+          const msg=JSON.parse(e.data);
+          if(msg.type==="state"&&msg.payload){
+            ignoreRef.current=true;
+            const s=msg.payload;
+            if(s.all)setAll(s.all);
+            if(s.teams)setTeams(s.teams);
+            if(s.pool!=null)setPool(s.pool);
+            setLastSync(new Date().toLocaleTimeString());
+          }
+        }catch(e){}
+      };
+    };
+    connect();
+    return()=>wsRef.current?.close();
+  },[]);
+
+  const push=(newAll,newTeams,newPool)=>{
+    if(wsRef.current?.readyState===1){
+      wsRef.current.send(JSON.stringify({type:"update",payload:{all:newAll,teams:newTeams,pool:newPool}}));
+      setSyncStatus("live");
+      setLastSync(new Date().toLocaleTimeString());
+    }
+  };
+
+  const updC=(id,p)=>{const n={...all,[id]:{...all[id],...p}};setAll(n);push(n,teams,pool);};
+  const updT=(id,p)=>{const n=teams.map(t=>t.id===id?{...t,...p}:t);setTeams(n);push(all,n,pool);};
+  const moveTo=(id,from,to)=>{
+    if(from===to)return;
+    let np=[...pool],nt=[...teams];
+    if(from==="pool")np=np.filter(x=>x!==id);
+    else nt=nt.map(t=>t.id===from?{...t,members:t.members.filter(x=>x!==id)}:t);
+    if(to==="pool")np=[...np,id];
+    else nt=nt.map(t=>t.id===to?{...t,members:[...t.members,id]}:t);
+    setPool(np);setTeams(nt);push(all,nt,np);
+  };
+
+  const tStats=(team)=>{
+    const ms=team.members.map(id=>all[id]).filter(Boolean);
+    const rated=ms.filter(c=>c.rating);
+    return{total:ms.length,f:ms.filter(c=>c.gender==="F").length,m:ms.filter(c=>c.gender==="M").length,
+      ret:ms.filter(c=>c.returning).length,maybe:ms.filter(c=>c.maybe).length,
+      avg:rated.length?(rated.reduce((s,c)=>s+c.rating,0)/rated.length).toFixed(1):null,
+      r1:ms.filter(c=>c.rating===1).length,r2:ms.filter(c=>c.rating===2).length,r3:ms.filter(c=>c.rating===3).length};
+  };
+
+  const filteredPool=pool.filter(id=>{
+    const c=all[id];if(!c)return false;
+    if(filterGender!=="all"&&c.gender!==filterGender)return false;
+    if(search&&!c.name.toLowerCase().includes(search.toLowerCase()))return false;
+    return true;
+  });
+
+  const totalAssigned=teams.reduce((s,t)=>s+t.members.length,0);
+  const statusColor=syncStatus==="live"?"#16A34A":syncStatus==="connecting"?"#F59E0B":"#DC2626";
+  const statusText=syncStatus==="live"?`🟢 Live${lastSync?" · "+lastSync:""}`:syncStatus==="connecting"?"🟡 Connecting...":"🔴 Offline — reconnecting...";
+
+  return(
+    <div style={{fontFamily:"'Segoe UI',Arial,sans-serif",minHeight:"100vh",background:"#EDEAE5",color:"#111"}}>
+      {/* TOPBAR */}
+      <div style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",color:"white",padding:"0 18px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,boxShadow:"0 3px 18px #0005"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:16,fontWeight:800}}>🏕 IVOW 2026</span>
+          <span style={{opacity:0.35}}>|</span>
+          <span style={{fontSize:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
+          <span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>
+        </div>
+        <div style={{display:"flex",gap:3}}>
+          {[["board","🗂 Board"],["analytics","📊 Analytics"],["overview","📋 Overview"]].map(([t2,l])=>(
+            <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:tab===t2?700:400}}>{l}</button>
+          ))}
+        </div>
+      </div>
+      {/* LEGEND */}
+      <div style={{background:"#1e293b",color:"white",padding:"3px 18px",display:"flex",gap:12,fontSize:10.5,opacity:0.8,flexWrap:"wrap"}}>
+        <span style={{color:"#93C5FD"}}>↩ Returning 2025</span>
+        <span style={{color:"#FCD34D"}}>⏳ Pending</span>
+        <span style={{color:"#A78BFA"}}>★ Team Lead</span>
+        <span style={{color:"#86EFAC"}}>1 Excellent</span>
+        <span style={{color:"#FDE68A"}}>2 Good</span>
+        <span style={{color:"#FCA5A5"}}>3 Average</span>
+      </div>
+
+      {/* BOARD */}
+      {tab==="board"&&(
+        <div style={{display:"flex",height:"calc(100vh - 80px)"}}>
+          <div style={{width:250,background:"#FAF7F3",borderRight:"1px solid #DDD5CC",display:"flex",flexDirection:"column",flexShrink:0}}>
+            <div style={{padding:"8px 8px 5px",borderBottom:"1px solid #E5DDD4"}}>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search..." style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
+              <div style={{display:"flex",gap:4,marginTop:4}}>
+                {["all","F","M"].map(g=>(
+                  <button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>
+                    {g==="all"?"All":g==="F"?"♀":"♂"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{padding:"4px 8px 2px",fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</div>
+            <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)}
+              onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
+              style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
+              {filteredPool.length===0&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
+              {filteredPool.map(id=>(
+                <StaffCard key={id} c={all[id]} from="pool" onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})}/>
+              ))}
+            </div>
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"10px 14px 20px"}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>
+              {teams.map((team)=>{
+                const col=getTeamColor(team.id);
+                const s=tStats(team);
+                const isOver=dragOver===team.id;
+                const sortR=arr=>[...arr].sort((a,b)=>(all[a]?.rating??99)-(all[b]?.rating??99));
+                const females=sortR(team.members.filter(id=>all[id]?.gender==="F"));
+                const males=sortR(team.members.filter(id=>all[id]?.gender==="M"));
+                return(
+                  <div key={team.id} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(null);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
+                    style={{background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"all 0.12s"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:6}}>
+                      {editingTeam===team.id
+                        ?<div style={{display:"flex",gap:4,flex:1}}>
+                          <input value={editingName} onChange={e=>setEditingName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(updT(team.id,{name:editingName}),setEditingTeam(null))} autoFocus style={{flex:1,padding:"2px 6px",borderRadius:5,border:`1.5px solid ${col.accent}`,fontSize:13,fontWeight:700,outline:"none"}}/>
+                          <button onClick={()=>{updT(team.id,{name:editingName});setEditingTeam(null);}} style={{background:col.accent,color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontWeight:700}}>✓</button>
+                        </div>
+                        :<>
+                          <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
+                          <span style={{background:col.accent,color:"white",borderRadius:20,padding:"0 6px",fontSize:10.5,fontWeight:700}}>{s.total}</span>
+                          {s.avg&&<span style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>⭐{s.avg}</span>}
+                          <span style={{fontSize:10,background:col.light,color:col.accent,borderRadius:20,padding:"0 6px"}}>♀{s.f} ♂{s.m}</span>
+                          {s.maybe>0&&<span style={{fontSize:10,background:"#FEF9C3",color:"#854D0E",borderRadius:20,padding:"0 5px"}}>⏳{s.maybe}</span>}
+                          <button onClick={()=>{setEditingTeam(team.id);setEditingName(team.name);}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.3,fontSize:11}}>✏️</button>
+                        </>
+                      }
+                    </div>
+                    <div style={{display:"flex",gap:4,marginBottom:6}}>
+                      <textarea value={team.teamStrengths} onChange={e=>updT(team.id,{teamStrengths:e.target.value})} placeholder="💪 Strengths" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#16A34A"}}/>
+                      <textarea value={team.teamWeaknesses} onChange={e=>updT(team.id,{teamWeaknesses:e.target.value})} placeholder="⚠️ Weaknesses" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#DC2626"}}/>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
+                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
+                      {females.length>0&&males.length>0&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
+                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
+                      {team.members.length===0&&<div style={{textAlign:"center",color:col.border+"88",fontSize:11,padding:"8px 0",border:`1.5px dashed ${col.border}44`,borderRadius:6}}>Drop a counselor here</div>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ANALYTICS */}
+      {tab==="analytics"&&(
+        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📊 Team Analytics</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
+            {teams.map((team)=>{
+              const col=getTeamColor(team.id);
+              const s=tStats(team);
+              const ms=team.members.map(id=>all[id]).filter(Boolean);
+              return(
+                <div key={team.id} style={{background:"white",borderRadius:12,padding:13,boxShadow:"0 2px 10px #0001",borderLeft:`4px solid ${col.accent}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
+                    {s.avg&&<span style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:800}}>⭐ {s.avg}</span>}
+                  </div>
+                  <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
+                    {[["👥",s.total,"Total"],["♀",s.f,"F"],["♂",s.m,"M"],["↩",s.ret,"Ret."]].map(([i,v,l])=>(
+                      <div key={l} style={{background:"#F8F9FA",borderRadius:5,padding:"2px 7px",textAlign:"center"}}>
+                        <div style={{fontWeight:800,fontSize:12}}>{i}{v}</div>
+                        <div style={{color:"#999",fontSize:9}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {s.r1+s.r2+s.r3>0&&(
+                    <div style={{marginBottom:8}}>
+                      <div style={{display:"flex",borderRadius:4,overflow:"hidden",height:12}}>
+                        {[[1,s.r1,"#16A34A"],[2,s.r2,"#D97706"],[3,s.r3,"#DC2626"]].filter(([,v])=>v>0).map(([r,v,c2])=>(
+                          <div key={r} style={{flex:v,background:c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"white",fontWeight:700}}>{v}</div>
+                        ))}
+                      </div>
+                      <div style={{fontSize:9,color:"#999",marginTop:2}}>{s.r1}× Exc · {s.r2}× Good · {s.r3}× Avg</div>
+                    </div>
+                  )}
+                  <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                    {ms.map(c=>(
+                      <div key={c.id} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",background:c.returning?"#EEF4FF":"#F9FAFB",borderRadius:4,border:c.maybe?"1px dashed #FCD34D":"none"}}>
+                        {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px"}}>★</span>}
+                        {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px"}}>⏳</span>}
+                        <span style={{flex:1,fontSize:11,fontWeight:600}}>{c.name}</span>
+                        <span style={{fontSize:9,color:"#999"}}>{c.gender==="F"?"♀":"♂"}</span>
+                        {c.rating?<span style={{fontSize:9,background:RATING_C[c.rating],color:"white",borderRadius:3,padding:"1px 6px",fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{fontSize:10,color:"#DDD"}}>—</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* OVERVIEW */}
+      {tab==="overview"&&(
+        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 Full Overview</div>
+          <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
+              <thead>
+                <tr style={{background:"#0f172a",color:"white"}}>
+                  {["Counselor","Gender","Age","Experience","Team","Rating","Status"].map(h=>(
+                    <th key={h} style={{padding:"8px 11px",textAlign:"left",fontSize:11,fontWeight:700}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {teams.flatMap(team=>team.members.map(id=>{
+                  const c=all[id];if(!c)return null;
+                  const col=getTeamColor(team.id);
+                  return(
+                    <tr key={id} style={{borderBottom:"1px solid #F3F4F6",cursor:"pointer"}} onClick={()=>setOpenCard(id)}
+                      onMouseEnter={e=>e.currentTarget.style.background="#F9FAFB"} onMouseLeave={e=>e.currentTarget.style.background="white"}>
+                      <td style={{padding:"6px 11px",fontSize:12,fontWeight:700}}>
+                        {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px",marginRight:4}}>★</span>}
+                        {c.name}
+                        {c.note&&<div style={{fontSize:9,color:"#3B82F6",marginTop:1}}>🔗 {c.note}</div>}
+                      </td>
+                      <td style={{padding:"6px 11px",fontSize:12}}>{c.gender==="F"?"♀":"♂"}</td>
+                      <td style={{padding:"6px 11px",fontSize:11,color:"#666"}}>{c.dob?getAge(c.dob):"—"}</td>
+                      <td style={{padding:"6px 11px",fontSize:10.5,color:"#777",maxWidth:180}}>{c.exp}</td>
+                      <td style={{padding:"6px 11px"}}><span style={{background:col.accent,color:"white",borderRadius:4,padding:"2px 7px",fontSize:10.5,fontWeight:700}}>{team.name}</span></td>
+                      <td style={{padding:"6px 11px"}}>{c.rating?<span style={{background:RATING_C[c.rating],color:"white",borderRadius:4,padding:"2px 8px",fontSize:10.5,fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{color:"#DDD"}}>—</span>}</td>
+                      <td style={{padding:"6px 11px",fontSize:10.5}}>
+                        {c.maybe?<span style={{color:"#D97706"}}>⏳ Pending</span>:c.returning?<span style={{color:"#2563EB"}}>↩ Returning</span>:c.status==="plus"?<span style={{color:"#D97706"}}>⭐ Plus</span>:<span style={{color:"#16A34A"}}>✅ New</span>}
+                      </td>
+                    </tr>
+                  );
+                })).filter(Boolean)}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL */}
+      {openCard!==null&&(()=>{
+        const c=all[openCard];if(!c)return null;
+        return(
+          <div onClick={()=>setOpenCard(null)} style={{position:"fixed",inset:0,background:"#0007",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:14,padding:22,width:460,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px #0005"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3,flexWrap:"wrap"}}>
+                    <span style={{fontSize:17,fontWeight:800}}>{c.name}</span>
+                    {c.role&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>★ {c.role}</span>}
+                    {c.maybe?<span style={{background:"#F59E0B",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⏳ Pending</span>:c.returning?<span style={{background:"#2563EB",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>↩ Returning 2025</span>:null}
+                    {c.status==="plus"&&<span style={{background:"#D97706",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⭐ Plus</span>}
+                  </div>
+                  <div style={{fontSize:11,color:"#777"}}>{c.city||"—"}{c.dob?` · Age ${getAge(c.dob)}`:""} · {c.gender==="F"?"Female":"Male"}</div>
+                  {c.note&&<div style={{marginTop:4,background:"#EEF4FF",border:"1px solid #93C5FD",borderRadius:5,padding:"3px 8px",fontSize:10.5,color:"#1E40AF"}}>🔗 {c.note}</div>}
+                </div>
+                <button onClick={()=>setOpenCard(null)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+              </div>
+              <div style={{marginBottom:11}}>
+                <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:4}}>Rating</div>
+                <div style={{display:"flex",gap:5}}>
+                  {[1,2,3].map(r=>(
+                    <button key={r} onClick={()=>updC(openCard,{rating:c.rating===r?null:r})}
+                      style={{flex:1,padding:"7px 0",borderRadius:6,border:`2px solid ${c.rating===r?RATING_C[r]:"#E5E7EB"}`,background:c.rating===r?RATING_C[r]:"white",color:c.rating===r?"white":"#555",cursor:"pointer",fontWeight:700,fontSize:12}}>
+                      {r} — {RATING_L[r]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
+                <div style={{fontSize:9.5,fontWeight:700,color:"#888",marginBottom:2}}>Experience</div>
+                <div style={{fontSize:12,lineHeight:1.6}}>{c.exp}</div>
+              </div>
+              <div style={{marginBottom:9}}>
+                <label style={{fontSize:10.5,fontWeight:700,color:"#16A34A",display:"block",marginBottom:3}}>💪 Strengths</label>
+                <textarea value={c.strengths} onChange={e=>updC(openCard,{strengths:e.target.value})} placeholder="What are their strengths?" rows={3} style={{width:"100%",borderRadius:6,border:"1.5px solid #86EFAC",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
+              </div>
+              <div style={{marginBottom:9}}>
+                <label style={{fontSize:10.5,fontWeight:700,color:"#DC2626",display:"block",marginBottom:3}}>⚠️ Weaknesses</label>
+                <textarea value={c.weaknesses} onChange={e=>updC(openCard,{weaknesses:e.target.value})} placeholder="What are their weaknesses?" rows={3} style={{width:"100%",borderRadius:6,border:"1.5px solid #FCA5A5",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
+              </div>
+              <div>
+                <label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>📝 Notes</label>
+                <textarea value={c.notes} onChange={e=>updC(openCard,{notes:e.target.value})} placeholder="Notes..." rows={2} style={{width:"100%",borderRadius:6,border:"1.5px solid #E5E7EB",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate}){
+  if(!c)return null;
+  const bg=c.maybe?"#FFFBEB":c.returning?"#EEF4FF":c.status==="plus"?"#FEFCE8":"white";
+  const border=c.maybe?"#FCD34D":c.returning?"#93C5FD":c.status==="plus"?"#FDE68A":"#E2D9CE";
+  const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":c.status==="plus"?"#D97706":(c.gender==="F"?"#F9A8D4":"#93C5FD");
+  return(
+    <div draggable onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd}
+      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:"grab",userSelect:"none",boxShadow:"0 1px 3px #0001",marginBottom:1,transition:"all 0.1s"}}
+      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}
+      onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px #0001";e.currentTarget.style.transform="none";}}>
+      <div style={{width:22,height:22,borderRadius:"50%",background:avatarBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"white",flexShrink:0}}>{c.name[0]}</div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px",marginRight:3}}>★</span>}
+          {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px",marginRight:3}}>⏳</span>}
+          {c.name}
+        </div>
+        <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}</div>
+      </div>
+      <div style={{display:"flex",gap:2,flexShrink:0}}>
+        {[1,2,3].map(r=>(
+          <button key={r} onClick={e=>{e.stopPropagation();onRate(r);}}
+            style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>
+        ))}
+      </div>
+      <button onClick={e=>{e.stopPropagation();onOpen();}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.35,fontSize:10,padding:"0 1px"}}>✎</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
