@@ -82,7 +82,9 @@ wss.on('connection', (ws) => {
 });
 
 // Load state then start server
-loadState().then(() => {
+loadState().catch(err => {
+  console.error('Failed to load state from Supabase:', err.message);
+}).finally(() => {
   server.listen(PORT, () => {
     console.log(`\n🏕  IVOW 2026 Server running at:`);
     console.log(`   Local:   http://localhost:${PORT}`);
