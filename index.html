@@ -33,35 +33,35 @@ function getTeamColor(id){const c=id.split("-")[0];return CAMP_BASE[c]||{accent:
 function getAge(dob){if(!dob)return"?";const b=new Date(dob),n=new Date("2026-03-10");let a=n.getFullYear()-b.getFullYear();if(n.getMonth()-b.getMonth()<0||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a;}
 
 const STAFF_INIT={
-  "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "hania":{id:"hania",name:"Hania Alfi",gender:"F",dob:"1999-11-01",city:"Givat Shmuel",exp:"Bnei Akiva, shlichut, youth counseling",returning:false,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "tehila":{id:"tehila",name:"Tehila Gal",gender:"F",dob:"2002-12-18",city:"Netanya",exp:"Bnei Akiva",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "yaar":{id:"yaar",name:"Yaar Ben Shalom",gender:"M",dob:"2004-01-13",city:"Kiryat Anavim",exp:"Summer camp counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "eilon":{id:"eilon",name:"Eilon",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "gal":{id:"gal",name:"Gal",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "tomer":{id:"tomer",name:"Tomer Porat",gender:"M",dob:"",city:"",exp:"CBB SIT 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "shila":{id:"shila",name:"Shila Segev",gender:"M",dob:"2002-07-29",city:"",exp:"Bnei Akiva, HaShomer HaChadash, ADHD children",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "lior":{id:"lior",name:"Lior Glam",gender:"F",dob:"2004-12-16",city:"Harish",exp:"IVOW alumna, day camp ages 3-15",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "daniela":{id:"daniela",name:"Daniela Naor",gender:"F",dob:"2005-03-29",city:"Hod HaSharon",exp:"Piano, Education Corps, Gesharim",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "ofek":{id:"ofek",name:"Ofek Gani",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "adar":{id:"adar",name:"Adar Buchris",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "gili":{id:"gili",name:"Gili Tzvi",gender:"F",dob:"2004-11-08",city:"Gan Yavne",exp:"YCC alumna, substitute teacher",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "itai":{id:"itai",name:"Itai Hazut",gender:"M",dob:"2003-02-14",city:"Yavne",exp:"Military boarding school, counselor cert, biathlon",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "dvir":{id:"dvir",name:"Dvir Maimon",gender:"M",dob:"2001-04-04",city:"Sderot",exp:"Scouts cmdr, Paran Mechina",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "ziv":{id:"ziv",name:"Ziv Amar",gender:"M",dob:"2003-11-29",city:"Lehavim",exp:"Children biathlon gr.1-6, Yahalom unit",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "kobi":{id:"kobi",name:"Kobi Biton",gender:"M",dob:"",city:"",exp:"YCC SIT 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "maya":{id:"maya",name:"Maya Weinstein",gender:"F",dob:"2005-09-09",city:"Hod HaSharon",exp:"Bereaved children camps, casualties officer",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "bar":{id:"bar",name:"Bar Afgan",gender:"F",dob:"2003-03-22",city:"",exp:"Canada camp, Scouts, post-hospitalization year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "hadar":{id:"hadar",name:"Hadar Rannan",gender:"F",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "sagiv":{id:"sagiv",name:"Sagiv Sharabi",gender:"M",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "asaf":{id:"asaf",name:"Asaf Goldfisher",gender:"M",dob:"",city:"",exp:"YCC SIT 2025 → MASAD SIT 2026",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "nitzan":{id:"nitzan",name:"Nitzan Zehavi",gender:"M",dob:"",city:"",exp:"Wingate IVOW 2025",returning:true,maybe:false,role:"Team Lead",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "shani":{id:"shani",name:"Shani Chaznov",gender:"F",dob:"2002-09-06",city:"Jerusalem",exp:"Scouts head-gdud, camps, service year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Sister of Nir Chazanov (Ottawa 2025)",status:"in"},
-  "ofer":{id:"ofer",name:"Ofer Gabai",gender:"M",dob:"2003-03-08",city:"Jerusalem",exp:"Forest kindergarten 3-6, Kibbutz Yahel 7-18",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Brother of Shahar Gabay (CBB 2025)",status:"in"},
-  "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning"},
-  "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Arkhild",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in"},
-  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus"},
+  "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "hania":{id:"hania",name:"Hania Alfi",gender:"F",dob:"1999-11-01",city:"Givat Shmuel",exp:"Bnei Akiva, shlichut, youth counseling",returning:false,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "tehila":{id:"tehila",name:"Tehila Gal",gender:"F",dob:"2002-12-18",city:"Netanya",exp:"Bnei Akiva",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "yaar":{id:"yaar",name:"Yaar Ben Shalom",gender:"M",dob:"2004-01-13",city:"Kiryat Anavim",exp:"Summer camp counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "eilon":{id:"eilon",name:"Eilon",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "gal":{id:"gal",name:"Gal",gender:"M",dob:"",city:"",exp:"",returning:false,maybe:true,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "tomer":{id:"tomer",name:"Tomer Porat",gender:"M",dob:"",city:"",exp:"CBB SIT 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "shila":{id:"shila",name:"Shila Segev",gender:"M",dob:"2002-07-29",city:"",exp:"Bnei Akiva, HaShomer HaChadash, ADHD children",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "lior":{id:"lior",name:"Lior Glam",gender:"F",dob:"2004-12-16",city:"Harish",exp:"IVOW alumna, day camp ages 3-15",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "daniela":{id:"daniela",name:"Daniela Naor",gender:"F",dob:"2005-03-29",city:"Hod HaSharon",exp:"Piano, Education Corps, Gesharim",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "ofek":{id:"ofek",name:"Ofek Gani",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "adar":{id:"adar",name:"Adar Buchris",gender:"F",dob:"",city:"",exp:"YCC IVOW 2025",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "gili":{id:"gili",name:"Gili Tzvi",gender:"F",dob:"2004-11-08",city:"Gan Yavne",exp:"YCC alumna, substitute teacher",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "itai":{id:"itai",name:"Itai Hazut",gender:"M",dob:"2003-02-14",city:"Yavne",exp:"Military boarding school, counselor cert, biathlon",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "dvir":{id:"dvir",name:"Dvir Maimon",gender:"M",dob:"2001-04-04",city:"Sderot",exp:"Scouts cmdr, Paran Mechina",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "ziv":{id:"ziv",name:"Ziv Amar",gender:"M",dob:"2003-11-29",city:"Lehavim",exp:"Children biathlon gr.1-6, Yahalom unit",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "kobi":{id:"kobi",name:"Kobi Biton",gender:"M",dob:"",city:"",exp:"YCC SIT 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "maya":{id:"maya",name:"Maya Weinstein",gender:"F",dob:"2005-09-09",city:"Hod HaSharon",exp:"Bereaved children camps, casualties officer",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "bar":{id:"bar",name:"Bar Afgan",gender:"F",dob:"2003-03-22",city:"",exp:"Canada camp, Scouts, post-hospitalization year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "hadar":{id:"hadar",name:"Hadar Rannan",gender:"F",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "sagiv":{id:"sagiv",name:"Sagiv Sharabi",gender:"M",dob:"",city:"",exp:"MASAD IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "asaf":{id:"asaf",name:"Asaf Goldfisher",gender:"M",dob:"",city:"",exp:"YCC SIT 2025 → MASAD SIT 2026",returning:true,maybe:true,role:"",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "nitzan":{id:"nitzan",name:"Nitzan Zehavi",gender:"M",dob:"",city:"",exp:"Wingate IVOW 2025",returning:true,maybe:false,role:"Team Lead",rating:1,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "shani":{id:"shani",name:"Shani Chaznov",gender:"F",dob:"2002-09-06",city:"Jerusalem",exp:"Scouts head-gdud, camps, service year",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Sister of Nir Chazanov (Ottawa 2025)",status:"in",phone:"",email:"",address:""},
+  "ofer":{id:"ofer",name:"Ofer Gabai",gender:"M",dob:"2003-03-08",city:"Jerusalem",exp:"Forest kindergarten 3-6, Kibbutz Yahel 7-18",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",note:"Brother of Shahar Gabay (CBB 2025)",status:"in",phone:"",email:"",address:""},
+  "gaya":{id:"gaya",name:"Gaya Zilberman",gender:"F",dob:"",city:"",exp:"Ottawa IVOW 2025",returning:true,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"returning",phone:"",email:"",address:""},
+  "shahar":{id:"shahar",name:"Shahar Lifshitz",gender:"M",dob:"2001-08-29",city:"Arkhild",exp:"Scouts, service year, 12th grade counselor",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "neta":{id:"neta",name:"Neta Aviav",gender:"F",dob:"2004-12-01",city:"Ramat Gan",exp:"IVOW alumna, Scouts, ages 10-15",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"in",phone:"",email:"",address:""},
+  "sahar":{id:"sahar",name:"Sahar Binyamin",gender:"F",dob:"2005-01-12",city:"Kedar",exp:"Kindergarten teacher, soldiers program, command",returning:false,maybe:false,role:"",rating:3,strengths:"",weaknesses:"",notes:"",status:"plus",phone:"",email:"",address:""},
 };
 
 const TEAMS_INIT=[
@@ -89,8 +89,15 @@ function App(){
   const [filterGender,setFilterGender]=useState("all");
   const [syncStatus,setSyncStatus]=useState("connecting");
   const [lastSync,setLastSync]=useState(null);
+  const [activityLog,setActivityLog]=useState([]);
+  const [showAddForm,setShowAddForm]=useState(false);
+  const [confirmDelete,setConfirmDelete]=useState(null);
   const wsRef=useRef(null);
   const ignoreRef=useRef(false);
+
+  const addLog=(action,details)=>{
+    setActivityLog(prev=>[{id:Date.now(),time:new Date().toLocaleString(),action,details},...prev].slice(0,200));
+  };
 
   // ── WebSocket ─────────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -136,7 +143,30 @@ function App(){
     else nt=nt.map(t=>t.id===from?{...t,members:t.members.filter(x=>x!==id)}:t);
     if(to==="pool")np=[...np,id];
     else nt=nt.map(t=>t.id===to?{...t,members:[...t.members,id]}:t);
+    const fromName=from==="pool"?"Pool":teams.find(t=>t.id===from)?.name||from;
+    const toName=to==="pool"?"Pool":teams.find(t=>t.id===to)?.name||to;
+    addLog("Move",`${all[id]?.name} moved from ${fromName} → ${toName}`);
     setPool(np);setTeams(nt);push(all,nt,np);
+  };
+
+  const addStaff=(staffData)=>{
+    const id=staffData.name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"")+"-"+Date.now().toString(36);
+    const newStaff={id,name:staffData.name,gender:staffData.gender||"M",dob:staffData.dob||"",city:staffData.city||"",exp:staffData.exp||"",returning:false,maybe:false,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:staffData.phone||"",email:staffData.email||"",address:staffData.address||""};
+    const newAll={...all,[id]:newStaff};
+    const newPool=[...pool,id];
+    setAll(newAll);setPool(newPool);push(newAll,teams,newPool);
+    addLog("Add Staff",`${staffData.name} added to pool`);
+    setShowAddForm(false);
+  };
+
+  const deleteStaff=(id)=>{
+    const name=all[id]?.name||id;
+    const newAll={...all};delete newAll[id];
+    const newPool=pool.filter(x=>x!==id);
+    const newTeams=teams.map(t=>({...t,members:t.members.filter(x=>x!==id)}));
+    setAll(newAll);setPool(newPool);setTeams(newTeams);push(newAll,newTeams,newPool);
+    addLog("Delete Staff",`${name} removed from system`);
+    setOpenCard(null);setConfirmDelete(null);
   };
 
   const tStats=(team)=>{
@@ -170,20 +200,31 @@ function App(){
           <span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>
         </div>
         <div style={{display:"flex",gap:3}}>
-          {[["board","🗂 Board"],["analytics","📊 Analytics"],["overview","📋 Overview"]].map(([t2,l])=>(
+          {[["board","🗂 Board"],["analytics","📊 Analytics"],["overview","📋 Overview"],["log","📜 Log"]].map(([t2,l])=>(
             <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:tab===t2?700:400}}>{l}</button>
           ))}
         </div>
       </div>
       {/* LEGEND */}
-      <div style={{background:"#1e293b",color:"white",padding:"3px 18px",display:"flex",gap:12,fontSize:10.5,opacity:0.8,flexWrap:"wrap"}}>
-        <span style={{color:"#93C5FD"}}>↩ Returning 2025</span>
-        <span style={{color:"#FCD34D"}}>⏳ Pending</span>
-        <span style={{color:"#A78BFA"}}>★ Team Lead</span>
-        <span style={{color:"#86EFAC"}}>1 Excellent</span>
-        <span style={{color:"#FDE68A"}}>2 Good</span>
-        <span style={{color:"#FCA5A5"}}>3 Average</span>
-      </div>
+      {(()=>{
+        const allArr=Object.values(all);
+        const retCount=allArr.filter(c=>c.returning).length;
+        const pendCount=allArr.filter(c=>c.maybe).length;
+        const leadCount=allArr.filter(c=>c.role).length;
+        const r1=allArr.filter(c=>c.rating===1).length;
+        const r2=allArr.filter(c=>c.rating===2).length;
+        const r3=allArr.filter(c=>c.rating===3).length;
+        return(
+          <div style={{background:"#1e293b",color:"white",padding:"3px 18px",display:"flex",gap:12,fontSize:10.5,opacity:0.8,flexWrap:"wrap"}}>
+            <span style={{color:"#93C5FD"}}>↩ Returning ({retCount})</span>
+            <span style={{color:"#FCD34D"}}>⏳ Pending ({pendCount})</span>
+            <span style={{color:"#A78BFA"}}>★ Team Lead ({leadCount})</span>
+            <span style={{color:"#86EFAC"}}>1 Excellent ({r1})</span>
+            <span style={{color:"#FDE68A"}}>2 Good ({r2})</span>
+            <span style={{color:"#FCA5A5"}}>3 Average ({r3})</span>
+          </div>
+        );
+      })()}
 
       {/* BOARD */}
       {tab==="board"&&(
@@ -199,7 +240,10 @@ function App(){
                 ))}
               </div>
             </div>
-            <div style={{padding:"4px 8px 2px",fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</div>
+            <div style={{padding:"4px 8px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</span>
+              <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700}}>+ Add Staff</button>
+            </div>
             <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)}
               onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
               style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
@@ -348,6 +392,52 @@ function App(){
         </div>
       )}
 
+      {/* ACTIVITY LOG */}
+      {tab==="log"&&(
+        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📜 Activity Log</div>
+          {activityLog.length===0?<div style={{textAlign:"center",color:"#999",padding:40,fontSize:13}}>No activity yet. Move staff between teams to see logs here.</div>:(
+            <div style={{maxWidth:700}}>
+              {activityLog.map(log=>(
+                <div key={log.id} style={{display:"flex",gap:10,padding:"8px 12px",background:"white",borderRadius:8,marginBottom:4,boxShadow:"0 1px 4px #0001",alignItems:"center"}}>
+                  <span style={{fontSize:10,color:"#999",whiteSpace:"nowrap",minWidth:130}}>{log.time}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:log.action==="Move"?"#2563EB":log.action==="Add Staff"?"#16A34A":"#DC2626",background:log.action==="Move"?"#DBEAFE":log.action==="Add Staff"?"#DCFCE7":"#FEE2E2",borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>{log.action}</span>
+                  <span style={{fontSize:12,flex:1}}>{log.details}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ADD STAFF MODAL */}
+      {showAddForm&&(()=>{
+        const formRef={name:"",gender:"F",dob:"",city:"",phone:"",email:"",address:"",exp:""};
+        return(
+          <div onClick={()=>setShowAddForm(false)} style={{position:"fixed",inset:0,background:"#0007",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:14,padding:22,width:460,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px #0005"}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
+                <span style={{fontSize:17,fontWeight:800}}>+ Add New Staff</span>
+                <button onClick={()=>setShowAddForm(false)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+              </div>
+              <form onSubmit={e=>{e.preventDefault();const f=new FormData(e.target);addStaff({name:f.get("name"),gender:f.get("gender"),dob:f.get("dob"),city:f.get("city"),phone:f.get("phone"),email:f.get("email"),address:f.get("address"),exp:f.get("exp")});}}>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Name *</label><input name="name" required placeholder="Full name" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Gender *</label><select name="gender" required style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}><option value="F">Female</option><option value="M">Male</option></select></div>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Date of Birth</label><input name="dob" type="date" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>City</label><input name="city" placeholder="City" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Phone</label><input name="phone" placeholder="Phone number" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                  <div><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Email</label><input name="email" type="email" placeholder="Email" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                </div>
+                <div style={{marginBottom:8}}><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Address</label><input name="address" placeholder="Full address" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
+                <div style={{marginBottom:12}}><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Experience</label><textarea name="exp" placeholder="Previous experience..." rows={2} style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",resize:"none"}}/></div>
+                <button type="submit" style={{width:"100%",padding:"9px 0",background:"#16A34A",color:"white",border:"none",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:13}}>Add Staff Member</button>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* MODAL */}
       {openCard!==null&&(()=>{
         const c=all[openCard];if(!c)return null;
@@ -365,8 +455,36 @@ function App(){
                   <div style={{fontSize:11,color:"#777"}}>{c.city||"—"}{c.dob?` · Age ${getAge(c.dob)}`:""} · {c.gender==="F"?"Female":"Male"}</div>
                   {c.note&&<div style={{marginTop:4,background:"#EEF4FF",border:"1px solid #93C5FD",borderRadius:5,padding:"3px 8px",fontSize:10.5,color:"#1E40AF"}}>🔗 {c.note}</div>}
                 </div>
-                <button onClick={()=>setOpenCard(null)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+                <div style={{display:"flex",gap:4}}>
+                  <button onClick={()=>setConfirmDelete(openCard)} style={{background:"#FEE2E2",border:"1px solid #FCA5A5",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,color:"#DC2626",fontWeight:700}}>🗑</button>
+                  <button onClick={()=>setOpenCard(null)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+                </div>
               </div>
+
+              {/* CONTACT INFO */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:11,background:"#F8F9FA",borderRadius:8,padding:10}}>
+                <div>
+                  <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>📱 Phone</label>
+                  <input value={c.phone||""} onChange={e=>updC(openCard,{phone:e.target.value})} placeholder="Phone number" style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>📧 Email</label>
+                  <input value={c.email||""} onChange={e=>updC(openCard,{email:e.target.value})} placeholder="Email address" style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none"}}/>
+                </div>
+                <div style={{gridColumn:"1/3"}}>
+                  <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>🏠 Address</label>
+                  <input value={c.address||""} onChange={e=>updC(openCard,{address:e.target.value})} placeholder="Full address" style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>📅 Date of Birth</label>
+                  <input type="date" value={c.dob||""} onChange={e=>updC(openCard,{dob:e.target.value})} style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>🏙 City</label>
+                  <input value={c.city||""} onChange={e=>updC(openCard,{city:e.target.value})} placeholder="City" style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none"}}/>
+                </div>
+              </div>
+
               <div style={{marginBottom:11}}>
                 <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:4}}>Rating</div>
                 <div style={{display:"flex",gap:5}}>
@@ -380,7 +498,7 @@ function App(){
               </div>
               <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
                 <div style={{fontSize:9.5,fontWeight:700,color:"#888",marginBottom:2}}>Experience</div>
-                <div style={{fontSize:12,lineHeight:1.6}}>{c.exp}</div>
+                <textarea value={c.exp||""} onChange={e=>updC(openCard,{exp:e.target.value})} placeholder="Experience..." rows={2} style={{width:"100%",borderRadius:5,border:"1px solid #E5E7EB",padding:"4px 6px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none",background:"transparent"}}/>
               </div>
               <div style={{marginBottom:9}}>
                 <label style={{fontSize:10.5,fontWeight:700,color:"#16A34A",display:"block",marginBottom:3}}>💪 Strengths</label>
@@ -390,10 +508,22 @@ function App(){
                 <label style={{fontSize:10.5,fontWeight:700,color:"#DC2626",display:"block",marginBottom:3}}>⚠️ Weaknesses</label>
                 <textarea value={c.weaknesses} onChange={e=>updC(openCard,{weaknesses:e.target.value})} placeholder="What are their weaknesses?" rows={3} style={{width:"100%",borderRadius:6,border:"1.5px solid #FCA5A5",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
               </div>
-              <div>
+              <div style={{marginBottom:12}}>
                 <label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:3}}>📝 Notes</label>
                 <textarea value={c.notes} onChange={e=>updC(openCard,{notes:e.target.value})} placeholder="Notes..." rows={2} style={{width:"100%",borderRadius:6,border:"1.5px solid #E5E7EB",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
               </div>
+
+              {/* DELETE CONFIRMATION */}
+              {confirmDelete===openCard&&(
+                <div style={{background:"#FEF2F2",border:"2px solid #DC2626",borderRadius:8,padding:12,textAlign:"center"}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#DC2626",marginBottom:8}}>Delete {c.name}?</div>
+                  <div style={{fontSize:11,color:"#777",marginBottom:10}}>This will permanently remove them from all teams.</div>
+                  <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+                    <button onClick={()=>setConfirmDelete(null)} style={{padding:"6px 16px",borderRadius:6,border:"1px solid #DDD",background:"white",cursor:"pointer",fontSize:12}}>Cancel</button>
+                    <button onClick={()=>deleteStaff(openCard)} style={{padding:"6px 16px",borderRadius:6,border:"none",background:"#DC2626",color:"white",cursor:"pointer",fontSize:12,fontWeight:700}}>Yes, Delete</button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
