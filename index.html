@@ -14,12 +14,24 @@
   ::-webkit-scrollbar{width:6px;height:6px;}
   ::-webkit-scrollbar-thumb{background:#CCC;border-radius:3px;}
   @media(min-width:641px){textarea,input,select{font-size:12px!important;}}
+  @media print{
+    body{background:white!important;color:black!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .no-print{display:none!important;}
+    .print-only{display:block!important;}
+    table{page-break-inside:auto;}
+    tr{page-break-inside:avoid;}
+  }
+  .search-match{box-shadow:0 0 0 2px #FBBF24,0 0 8px #FBBF2488!important;}
+  .mobile-target{animation:pulse 1.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 const {useState,useEffect,useRef,useCallback}=React;
+
+/* ─── Constants ─────────────────────────────────────────────────────────── */
 
 const RATING_C={1:"#16A34A",2:"#D97706",3:"#DC2626"};
 const RATING_L={1:"Excellent",2:"Good",3:"Average"};
@@ -30,8 +42,19 @@ const CAMP_BASE={
   WINGATE:{accent:"#9333EA",light:"#F3E8FF",border:"#A855F7",bg:"#FDF4FF"},
   OTTAWA:{accent:"#E11D48",light:"#FFE4E6",border:"#F43F5E",bg:"#FFF1F2"},
 };
+const TARGET_DEFAULTS={
+  'CBB-IVOW':{targetF:3,targetM:3},'CBB-SIT':{targetF:2,targetM:3},
+  'YCC-IVOW':{targetF:3,targetM:3},'YCC-SIT':{targetF:2,targetM:3},
+  'MASAD-IVOW':{targetF:3,targetM:3},'MASAD-SIT':{targetF:2,targetM:2},
+  'WINGATE':{targetF:3,targetM:3},'OTTAWA':{targetF:3,targetM:3},
+};
+
 function getTeamColor(id){const c=id.split("-")[0];return CAMP_BASE[c]||{accent:"#6366F1",light:"#E0E7FF",border:"#818CF8",bg:"#F8FAFF"};}
 function getAge(dob){if(!dob)return"?";const b=new Date(dob),n=new Date("2026-03-10");let a=n.getFullYear()-b.getFullYear();if(n.getMonth()-b.getMonth()<0||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a;}
+function matchesSearch(c,q){if(!q)return false;const lq=q.toLowerCase();return c.name.toLowerCase().includes(lq)||c.city?.toLowerCase().includes(lq)||c.exp?.toLowerCase().includes(lq);}
+function deepClone(obj){return JSON.parse(JSON.stringify(obj));}
+
+/* ─── Default Data (used for seeding if DB is empty) ────────────────── */
 
 const STAFF_INIT={
   "yael-f":{id:"yael-f",name:"Yael Pareyenti",gender:"F",dob:"2005-08-08",city:"Modi'in",exp:"Krembo Wings, special needs",returning:false,maybe:false,role:"",rating:2,strengths:"",weaknesses:"",notes:"",status:"in",phone:"050-7451134",email:"yaelpar0808@gmail.com",address:""},
@@ -76,10 +99,26 @@ const TEAMS_INIT=[
   {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
 ];
 
+/* ─── State Migration ───────────────────────────────────────────────── */
+
+function migrateState(state){
+  if(state.teams){
+    state.teams=state.teams.map(t=>{
+      const def=TARGET_DEFAULTS[t.id]||{targetF:3,targetM:3};
+      return{...t,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM,teamStrengths:t.teamStrengths??"",teamWeaknesses:t.teamWeaknesses??""};
+    });
+  }
+  if(!state.activityLog)state.activityLog=[];
+  return state;
+}
+
+/* ─── App ───────────────────────────────────────────────────────────── */
+
 function App(){
   const [all,setAll]=useState(STAFF_INIT);
   const [teams,setTeams]=useState(TEAMS_INIT);
   const [pool,setPool]=useState([]);
+  const [activityLog,setActivityLog]=useState([]);
   const [dragInfo,setDragInfo]=useState(null);
   const [dragOver,setDragOver]=useState(null);
   const [tab,setTab]=useState("board");
@@ -90,58 +129,107 @@ function App(){
   const [filterGender,setFilterGender]=useState("all");
   const [syncStatus,setSyncStatus]=useState("connecting");
   const [lastSync,setLastSync]=useState(null);
-  const [activityLog,setActivityLog]=useState([]);
   const [showAddForm,setShowAddForm]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(null);
   const [showPool,setShowPool]=useState(false);
+  const [canUndo,setCanUndo]=useState(false);
+  const [mobileSelected,setMobileSelected]=useState(null);
   const wsRef=useRef(null);
-  const ignoreRef=useRef(false);
+  const logRef=useRef([]);
+  const undoStack=useRef([]);
+  const searchRef=useRef(null);
+  const allRef=useRef(all);
+  const teamsRef=useRef(teams);
+  const poolRef=useRef(pool);
   const [isMobile,setIsMobile]=useState(window.innerWidth<640);
   useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<640);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
+  useEffect(()=>{allRef.current=all;},[all]);
+  useEffect(()=>{teamsRef.current=teams;},[teams]);
+  useEffect(()=>{poolRef.current=pool;},[pool]);
 
-  const addLog=(action,details)=>{
-    setActivityLog(prev=>[{id:Date.now(),time:new Date().toLocaleString(),action,details},...prev].slice(0,200));
+  /* ── Undo ────────────────────────────────────────────────────── */
+
+  const snapshot=()=>{
+    undoStack.current=[...undoStack.current.slice(-29),{all:deepClone(allRef.current),teams:deepClone(teamsRef.current),pool:[...poolRef.current]}];
+    setCanUndo(true);
   };
 
-  // ── WebSocket ─────────────────────────────────────────────────────────────
+  const undo=()=>{
+    if(undoStack.current.length===0)return;
+    const prev=undoStack.current.pop();
+    setAll(prev.all);setTeams(prev.teams);setPool(prev.pool);
+    push(prev.all,prev.teams,prev.pool);
+    setCanUndo(undoStack.current.length>0);
+    addLog("Undo","Reverted last change");
+  };
+
+  /* ── Activity Log ────────────────────────────────────────────── */
+
+  const addLog=(action,details)=>{
+    const entry={id:Date.now(),time:new Date().toLocaleString(),action,details};
+    const newLog=[entry,...logRef.current].slice(0,200);
+    logRef.current=newLog;
+    setActivityLog(newLog);
+    return newLog;
+  };
+
+  /* ── WebSocket ───────────────────────────────────────────────── */
+
   useEffect(()=>{
+    let receivedState=false;
     const connect=()=>{
       const proto=location.protocol==="https:"?"wss":"ws";
       const ws=new WebSocket(`${proto}://${location.host}`);
       wsRef.current=ws;
-      ws.onopen=()=>setSyncStatus("live");
+      ws.onopen=()=>{
+        setSyncStatus("live");
+        setTimeout(()=>{
+          if(!receivedState){
+            push(allRef.current,teamsRef.current,poolRef.current);
+          }
+        },2500);
+      };
       ws.onclose=()=>{setSyncStatus("offline");setTimeout(connect,2000);};
       ws.onerror=()=>setSyncStatus("offline");
       ws.onmessage=(e)=>{
         try{
           const msg=JSON.parse(e.data);
           if(msg.type==="state"&&msg.payload){
-            ignoreRef.current=true;
-            const s=msg.payload;
+            receivedState=true;
+            const s=migrateState(msg.payload);
             if(s.all)setAll(s.all);
             if(s.teams)setTeams(s.teams);
             if(s.pool!=null)setPool(s.pool);
+            if(s.activityLog){logRef.current=s.activityLog;setActivityLog(s.activityLog);}
             setLastSync(new Date().toLocaleTimeString());
+          }else if(msg.type==="need_init"){
+            push(allRef.current,teamsRef.current,poolRef.current);
           }
-        }catch(e){}
+        }catch(err){}
       };
     };
     connect();
     return()=>wsRef.current?.close();
   },[]);
 
+  /* ── Push to server ──────────────────────────────────────────── */
+
   const push=(newAll,newTeams,newPool)=>{
     if(wsRef.current?.readyState===1){
-      wsRef.current.send(JSON.stringify({type:"update",payload:{all:newAll,teams:newTeams,pool:newPool}}));
+      wsRef.current.send(JSON.stringify({type:"update",payload:{all:newAll,teams:newTeams,pool:newPool,activityLog:logRef.current}}));
       setSyncStatus("live");
       setLastSync(new Date().toLocaleTimeString());
     }
   };
 
-  const updC=(id,p)=>{const n={...all,[id]:{...all[id],...p}};setAll(n);push(n,teams,pool);};
-  const updT=(id,p)=>{const n=teams.map(t=>t.id===id?{...t,...p}:t);setTeams(n);push(all,n,pool);};
+  /* ── CRUD ─────────────────────────────────────────────────────── */
+
+  const updC=(id,p)=>{snapshot();const n={...all,[id]:{...all[id],...p}};setAll(n);push(n,teams,pool);};
+  const updT=(id,p)=>{snapshot();const n=teams.map(t=>t.id===id?{...t,...p}:t);setTeams(n);push(all,n,pool);};
+
   const moveTo=(id,from,to)=>{
     if(from===to)return;
+    snapshot();
     let np=[...pool],nt=[...teams];
     if(from==="pool")np=np.filter(x=>x!==id);
     else nt=nt.map(t=>t.id===from?{...t,members:t.members.filter(x=>x!==id)}:t);
@@ -149,11 +237,12 @@ function App(){
     else nt=nt.map(t=>t.id===to?{...t,members:[...t.members,id]}:t);
     const fromName=from==="pool"?"Pool":teams.find(t=>t.id===from)?.name||from;
     const toName=to==="pool"?"Pool":teams.find(t=>t.id===to)?.name||to;
-    addLog("Move",`${all[id]?.name} moved from ${fromName} → ${toName}`);
+    addLog("Move",`${all[id]?.name}: ${fromName} → ${toName}`);
     setPool(np);setTeams(nt);push(all,nt,np);
   };
 
   const addStaff=(staffData)=>{
+    snapshot();
     const id=staffData.name.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"")+"-"+Date.now().toString(36);
     const newStaff={id,name:staffData.name,gender:staffData.gender||"M",dob:staffData.dob||"",city:staffData.city||"",exp:staffData.exp||"",returning:false,maybe:false,role:"",rating:null,strengths:"",weaknesses:"",notes:"",status:"in",phone:staffData.phone||"",email:staffData.email||"",address:staffData.address||""};
     const newAll={...all,[id]:newStaff};
@@ -164,14 +253,66 @@ function App(){
   };
 
   const deleteStaff=(id)=>{
+    snapshot();
     const name=all[id]?.name||id;
     const newAll={...all};delete newAll[id];
     const newPool=pool.filter(x=>x!==id);
     const newTeams=teams.map(t=>({...t,members:t.members.filter(x=>x!==id)}));
     setAll(newAll);setPool(newPool);setTeams(newTeams);push(newAll,newTeams,newPool);
-    addLog("Delete Staff",`${name} removed from system`);
+    addLog("Delete",`${name} removed`);
     setOpenCard(null);setConfirmDelete(null);
   };
+
+  /* ── CSV Export ──────────────────────────────────────────────── */
+
+  const exportCSV=()=>{
+    const rows=[["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"]];
+    teams.forEach(team=>{
+      team.members.forEach(id=>{
+        const c=all[id];if(!c)return;
+        rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone,c.email,c.exp,c.strengths,c.weaknesses,c.notes]);
+      });
+    });
+    pool.forEach(id=>{
+      const c=all[id];if(!c)return;
+      rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.role,c.phone,c.email,c.exp,c.strengths,c.weaknesses,c.notes]);
+    });
+    const csv=rows.map(r=>r.map(v=>`"${(v||"").toString().replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download=`ivow-2026-staff-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  /* ── Keyboard Shortcuts ──────────────────────────────────────── */
+
+  useEffect(()=>{
+    const handler=(e)=>{
+      if(e.key==="z"&&(e.metaKey||e.ctrlKey)&&!e.shiftKey){e.preventDefault();undo();}
+      if(e.key==="/"&&!e.metaKey&&!e.ctrlKey&&document.activeElement.tagName!=="INPUT"&&document.activeElement.tagName!=="TEXTAREA"){e.preventDefault();searchRef.current?.focus();}
+      if(e.key==="Escape"){setOpenCard(null);setShowAddForm(false);setConfirmDelete(null);setMobileSelected(null);if(document.activeElement===searchRef.current){setSearch("");searchRef.current.blur();}}
+    };
+    window.addEventListener("keydown",handler);
+    return()=>window.removeEventListener("keydown",handler);
+  },[]);
+
+  /* ── Mobile Tap-to-Move ──────────────────────────────────────── */
+
+  const handleMobileTap=(id,from)=>{
+    if(!isMobile)return;
+    if(mobileSelected?.id===id){setMobileSelected(null);return;}
+    setMobileSelected({id,from});
+  };
+
+  const handleMobileDrop=(to)=>{
+    if(!mobileSelected)return;
+    moveTo(mobileSelected.id,mobileSelected.from,to);
+    setMobileSelected(null);
+  };
+
+  /* ── Stats ───────────────────────────────────────────────────── */
 
   const tStats=(team)=>{
     const ms=team.members.map(id=>all[id]).filter(Boolean);
@@ -193,22 +334,26 @@ function App(){
   const statusColor=syncStatus==="live"?"#16A34A":syncStatus==="connecting"?"#F59E0B":"#DC2626";
   const statusText=syncStatus==="live"?`🟢 Live${lastSync?" · "+lastSync:""}`:syncStatus==="connecting"?"🟡 Connecting...":"🔴 Offline — reconnecting...";
 
+  /* ── Render ──────────────────────────────────────────────────── */
+
   return(
     <div style={{fontFamily:"'Segoe UI',Arial,sans-serif",minHeight:"100vh",background:"#EDEAE5",color:"#111"}}>
       {/* TOPBAR */}
-      <div style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",color:"white",padding:isMobile?"6px 10px":"0 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:4,minHeight:isMobile?"auto":52,boxShadow:"0 3px 18px #0005"}}>
+      <div className="no-print" style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",color:"white",padding:isMobile?"6px 10px":"0 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:4,minHeight:isMobile?"auto":52,boxShadow:"0 3px 18px #0005"}}>
         <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,flexWrap:"wrap"}}>
           <span style={{fontSize:isMobile?13:16,fontWeight:800}}>🏕 IVOW 2026</span>
           {!isMobile&&<span style={{opacity:0.35}}>|</span>}
           <span style={{fontSize:isMobile?9:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
           {!isMobile&&<span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>}
         </div>
-        <div style={{display:"flex",gap:2}}>
+        <div style={{display:"flex",gap:2,alignItems:"center"}}>
+          <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{background:canUndo?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.2)",color:canUndo?"white":"rgba(255,255,255,0.3)",borderRadius:7,padding:isMobile?"4px 7px":"4px 10px",cursor:canUndo?"pointer":"default",fontSize:isMobile?14:12,fontWeight:700}}>↶</button>
           {[["board",isMobile?"🗂":"🗂 Board"],["analytics",isMobile?"📊":"📊 Analytics"],["overview",isMobile?"📋":"📋 Overview"],["log",isMobile?"📜":"📜 Log"]].map(([t2,l])=>(
             <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 12px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:tab===t2?700:400}}>{l}</button>
           ))}
         </div>
       </div>
+
       {/* LEGEND */}
       {(()=>{
         const allArr=Object.values(all);
@@ -219,21 +364,21 @@ function App(){
         const r2=allArr.filter(c=>c.rating===2).length;
         const r3=allArr.filter(c=>c.rating===3).length;
         return(
-          <div style={{background:"#1e293b",color:"white",padding:isMobile?"3px 8px":"3px 18px",display:"flex",gap:isMobile?6:12,fontSize:isMobile?9:10.5,opacity:0.8,flexWrap:"wrap"}}>
+          <div className="no-print" style={{background:"#1e293b",color:"white",padding:isMobile?"3px 8px":"3px 18px",display:"flex",gap:isMobile?6:12,fontSize:isMobile?9:10.5,opacity:0.8,flexWrap:"wrap",alignItems:"center"}}>
             <span style={{color:"#93C5FD"}}>↩ Returning ({retCount})</span>
             <span style={{color:"#FCD34D"}}>⏳ Pending ({pendCount})</span>
             <span style={{color:"#A78BFA"}}>★ Team Lead ({leadCount})</span>
             <span style={{color:"#86EFAC"}}>1 Excellent ({r1})</span>
             <span style={{color:"#FDE68A"}}>2 Good ({r2})</span>
             <span style={{color:"#FCA5A5"}}>3 Average ({r3})</span>
+            {!isMobile&&<span style={{marginLeft:"auto",fontSize:9,opacity:0.5}}>/ Search · Ctrl+Z Undo · Esc Close</span>}
           </div>
         );
       })()}
 
-      {/* BOARD */}
+      {/* ══════════════ BOARD TAB ══════════════ */}
       {tab==="board"&&(
         <div style={{display:"flex",flexDirection:isMobile?"column":"row",height:isMobile?"auto":"calc(100vh - 80px)"}}>
-          {/* Mobile: floating pool toggle */}
           {isMobile&&(
             <div style={{padding:"6px 10px",background:"#FAF7F3",borderBottom:"1px solid #DDD5CC",display:"flex",gap:6,alignItems:"center"}}>
               <button onClick={()=>setShowPool(!showPool)} style={{background:"#0f172a",color:"white",border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>
@@ -242,11 +387,12 @@ function App(){
               <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Add</button>
             </div>
           )}
-          {/* Pool sidebar - desktop always, mobile togglable */}
+
+          {/* Pool Sidebar */}
           {(!isMobile||showPool)&&(
           <div style={{width:isMobile?"100%":250,maxHeight:isMobile?300:"none",background:"#FAF7F3",borderRight:isMobile?"none":"1px solid #DDD5CC",borderBottom:isMobile?"1px solid #DDD5CC":"none",display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 8px 5px",borderBottom:"1px solid #E5DDD4"}}>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search..." style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
+              <input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search... ( / )" style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
               <div style={{display:"flex",gap:4,marginTop:4}}>
                 {["all","F","M"].map(g=>(
                   <button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>
@@ -262,13 +408,21 @@ function App(){
             <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)}
               onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
               style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
-              {filteredPool.length===0&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
+              {mobileSelected&&isMobile&&(
+                <button onClick={()=>handleMobileDrop("pool")} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:4,background:"#DBEAFE",border:"2px dashed #3B82F6",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:"#1D4ED8"}}>📥 Drop to Pool</button>
+              )}
+              {filteredPool.length===0&&!mobileSelected&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
               {filteredPool.map(id=>(
-                <StaffCard key={id} c={all[id]} from="pool" onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})}/>
+                <StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id}
+                  onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}}
+                  onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})}
+                  onMobileTap={()=>handleMobileTap(id,"pool")}/>
               ))}
             </div>
           </div>
           )}
+
+          {/* Teams Grid */}
           <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 8px 20px":"10px 14px 20px"}}>
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>
               {teams.map((team)=>{
@@ -301,8 +455,17 @@ function App(){
                       <textarea value={team.teamStrengths} onChange={e=>updT(team.id,{teamStrengths:e.target.value})} placeholder="💪 Strengths" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#16A34A"}}/>
                       <textarea value={team.teamWeaknesses} onChange={e=>updT(team.id,{teamWeaknesses:e.target.value})} placeholder="⚠️ Weaknesses" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#DC2626"}}/>
                     </div>
+
+                    {/* Mobile drop target */}
+                    {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(
+                      <button onClick={()=>handleMobileDrop(team.id)} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>
+                    )}
+
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
-                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
+                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id}
+                        onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}}
+                        onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}
+                        onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
                         <div key={`ef-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
                           style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:dragOver===team.id?"#FDF2F8":"transparent",border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center",transition:"background 0.15s"}}>
@@ -310,7 +473,10 @@ function App(){
                         </div>
                       ))}
                       {(females.length>0||((team.targetF||0)-females.length)>0)&&(males.length>0||((team.targetM||0)-males.length)>0)&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
-                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}/>)}
+                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id}
+                        onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}}
+                        onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})}
+                        onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetM||0)-males.length)}).map((_,i)=>(
                         <div key={`em-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
                           style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:dragOver===team.id?"#EFF6FF":"transparent",border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center",transition:"background 0.15s"}}>
@@ -326,7 +492,7 @@ function App(){
         </div>
       )}
 
-      {/* ANALYTICS */}
+      {/* ══════════════ ANALYTICS TAB ══════════════ */}
       {tab==="analytics"&&(
         <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
           <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📊 Team Analytics</div>
@@ -361,7 +527,7 @@ function App(){
                   )}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
                     {ms.map(c=>(
-                      <div key={c.id} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",background:c.returning?"#EEF4FF":"#F9FAFB",borderRadius:4,border:c.maybe?"1px dashed #FCD34D":"none"}}>
+                      <div key={c.id} className={search&&matchesSearch(c,search)?"search-match":""} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",background:c.returning?"#EEF4FF":"#F9FAFB",borderRadius:4,border:c.maybe?"1px dashed #FCD34D":"none"}}>
                         {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px"}}>★</span>}
                         {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px"}}>⏳</span>}
                         <span style={{flex:1,fontSize:11,fontWeight:600}}>{c.name}</span>
@@ -377,10 +543,17 @@ function App(){
         </div>
       )}
 
-      {/* OVERVIEW */}
+      {/* ══════════════ OVERVIEW TAB ══════════════ */}
       {tab==="overview"&&(
         <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
-          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 Full Overview</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <span style={{fontSize:15,fontWeight:800}}>📋 Full Overview</span>
+            <div className="no-print" style={{display:"flex",gap:6,alignItems:"center"}}>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Filter..." style={{padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none",width:160}}/>
+              <button onClick={exportCSV} style={{background:"#0f172a",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📥 Export CSV</button>
+              <button onClick={()=>window.print()} style={{background:"#6B7280",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>🖨 Print</button>
+            </div>
+          </div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
               <thead>
@@ -394,9 +567,11 @@ function App(){
                 {teams.flatMap(team=>team.members.map(id=>{
                   const c=all[id];if(!c)return null;
                   const col=getTeamColor(team.id);
+                  const isMatch=search&&matchesSearch(c,search);
+                  const dimmed=search&&!isMatch;
                   return(
-                    <tr key={id} style={{borderBottom:"1px solid #F3F4F6",cursor:"pointer"}} onClick={()=>setOpenCard(id)}
-                      onMouseEnter={e=>e.currentTarget.style.background="#F9FAFB"} onMouseLeave={e=>e.currentTarget.style.background="white"}>
+                    <tr key={id} style={{borderBottom:"1px solid #F3F4F6",cursor:"pointer",opacity:dimmed?0.35:1,background:isMatch?"#FEFCE8":"white",transition:"opacity 0.15s"}} onClick={()=>setOpenCard(id)}
+                      onMouseEnter={e=>{if(!dimmed)e.currentTarget.style.background=isMatch?"#FEF9C3":"#F9FAFB";}} onMouseLeave={e=>{e.currentTarget.style.background=isMatch?"#FEFCE8":"white";}}>
                       <td style={{padding:"6px 11px",fontSize:12,fontWeight:700}}>
                         {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px",marginRight:4}}>★</span>}
                         {c.name}
@@ -413,22 +588,44 @@ function App(){
                     </tr>
                   );
                 })).filter(Boolean)}
+                {pool.length>0&&<tr><td colSpan={7} style={{padding:"8px 11px",fontSize:11,fontWeight:800,color:"#999",background:"#F8F9FA"}}>Pool ({pool.length})</td></tr>}
+                {pool.map(id=>{
+                  const c=all[id];if(!c)return null;
+                  const isMatch=search&&matchesSearch(c,search);
+                  const dimmed=search&&!isMatch;
+                  return(
+                    <tr key={id} style={{borderBottom:"1px solid #F3F4F6",cursor:"pointer",opacity:dimmed?0.35:1,background:isMatch?"#FEFCE8":"white"}} onClick={()=>setOpenCard(id)}>
+                      <td style={{padding:"6px 11px",fontSize:12,fontWeight:700}}>{c.name}</td>
+                      <td style={{padding:"6px 11px",fontSize:12}}>{c.gender==="F"?"♀":"♂"}</td>
+                      <td style={{padding:"6px 11px",fontSize:11,color:"#666"}}>{c.dob?getAge(c.dob):"—"}</td>
+                      <td style={{padding:"6px 11px",fontSize:10.5,color:"#777",maxWidth:180}}>{c.exp}</td>
+                      <td style={{padding:"6px 11px"}}><span style={{background:"#94A3B8",color:"white",borderRadius:4,padding:"2px 7px",fontSize:10.5,fontWeight:700}}>Pool</span></td>
+                      <td style={{padding:"6px 11px"}}>{c.rating?<span style={{background:RATING_C[c.rating],color:"white",borderRadius:4,padding:"2px 8px",fontSize:10.5,fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{color:"#DDD"}}>—</span>}</td>
+                      <td style={{padding:"6px 11px",fontSize:10.5}}>
+                        {c.maybe?<span style={{color:"#D97706"}}>⏳ Pending</span>:c.returning?<span style={{color:"#2563EB"}}>↩ Returning</span>:c.status==="plus"?<span style={{color:"#D97706"}}>⭐ Plus</span>:<span style={{color:"#16A34A"}}>✅ New</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* ACTIVITY LOG */}
+      {/* ══════════════ ACTIVITY LOG TAB ══════════════ */}
       {tab==="log"&&(
         <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
-          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📜 Activity Log</div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
+            <span style={{fontSize:15,fontWeight:800}}>📜 Activity Log</span>
+            {activityLog.length>0&&<span style={{fontSize:11,color:"#999"}}>{activityLog.length} entries (synced across sessions)</span>}
+          </div>
           {activityLog.length===0?<div style={{textAlign:"center",color:"#999",padding:40,fontSize:13}}>No activity yet. Move staff between teams to see logs here.</div>:(
             <div style={{maxWidth:700}}>
               {activityLog.map(log=>(
                 <div key={log.id} style={{display:"flex",flexWrap:isMobile?"wrap":"nowrap",gap:isMobile?4:10,padding:"8px 12px",background:"white",borderRadius:8,marginBottom:4,boxShadow:"0 1px 4px #0001",alignItems:isMobile?"flex-start":"center"}}>
                   <span style={{fontSize:10,color:"#999",whiteSpace:"nowrap",minWidth:isMobile?0:130}}>{log.time}</span>
-                  <span style={{fontSize:10,fontWeight:700,color:log.action==="Move"?"#2563EB":log.action==="Add Staff"?"#16A34A":"#DC2626",background:log.action==="Move"?"#DBEAFE":log.action==="Add Staff"?"#DCFCE7":"#FEE2E2",borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>{log.action}</span>
+                  <span style={{fontSize:10,fontWeight:700,color:log.action==="Move"?"#2563EB":log.action==="Add Staff"?"#16A34A":log.action==="Undo"?"#9333EA":"#DC2626",background:log.action==="Move"?"#DBEAFE":log.action==="Add Staff"?"#DCFCE7":log.action==="Undo"?"#F3E8FF":"#FEE2E2",borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>{log.action}</span>
                   <span style={{fontSize:12,flex:1}}>{log.details}</span>
                 </div>
               ))}
@@ -437,9 +634,8 @@ function App(){
         </div>
       )}
 
-      {/* ADD STAFF MODAL */}
+      {/* ══════════════ ADD STAFF MODAL ══════════════ */}
       {showAddForm&&(()=>{
-        const formRef={name:"",gender:"F",dob:"",city:"",phone:"",email:"",address:"",exp:""};
         return(
           <div onClick={()=>setShowAddForm(false)} style={{position:"fixed",inset:0,background:"#0007",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center"}}>
             <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:14,padding:22,width:460,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px #0005"}}>
@@ -465,7 +661,7 @@ function App(){
         );
       })()}
 
-      {/* MODAL */}
+      {/* ══════════════ STAFF DETAIL MODAL ══════════════ */}
       {openCard!==null&&(()=>{
         const c=all[openCard];if(!c)return null;
         return(
@@ -488,7 +684,6 @@ function App(){
                 </div>
               </div>
 
-              {/* CONTACT INFO */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:11,background:"#F8F9FA",borderRadius:8,padding:10}}>
                 <div>
                   <label style={{fontSize:9.5,fontWeight:700,color:"#888",display:"block",marginBottom:2}}>📱 Phone</label>
@@ -523,6 +718,27 @@ function App(){
                   ))}
                 </div>
               </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:10}}>
+                <div style={{display:"flex",gap:6}}>
+                  <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
+                    <input type="checkbox" checked={c.returning} onChange={e=>updC(openCard,{returning:e.target.checked})}/>
+                    <span style={{fontWeight:600,color:"#2563EB"}}>↩ Returning</span>
+                  </label>
+                </div>
+                <div style={{display:"flex",gap:6}}>
+                  <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}>
+                    <input type="checkbox" checked={c.maybe} onChange={e=>updC(openCard,{maybe:e.target.checked})}/>
+                    <span style={{fontWeight:600,color:"#D97706"}}>⏳ Maybe</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
+                <div style={{fontSize:9.5,fontWeight:700,color:"#888",marginBottom:2}}>Role</div>
+                <input value={c.role||""} onChange={e=>updC(openCard,{role:e.target.value})} placeholder="e.g. Team Lead" style={{width:"100%",padding:"4px 7px",borderRadius:5,border:"1px solid #E5E7EB",fontSize:12,boxSizing:"border-box",outline:"none",background:"transparent"}}/>
+              </div>
+
               <div style={{background:"#F8F9FA",borderRadius:7,padding:"7px 10px",marginBottom:10}}>
                 <div style={{fontSize:9.5,fontWeight:700,color:"#888",marginBottom:2}}>Experience</div>
                 <textarea value={c.exp||""} onChange={e=>updC(openCard,{exp:e.target.value})} placeholder="Experience..." rows={2} style={{width:"100%",borderRadius:5,border:"1px solid #E5E7EB",padding:"4px 6px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none",background:"transparent"}}/>
@@ -540,7 +756,6 @@ function App(){
                 <textarea value={c.notes} onChange={e=>updC(openCard,{notes:e.target.value})} placeholder="Notes..." rows={2} style={{width:"100%",borderRadius:6,border:"1.5px solid #E5E7EB",padding:"5px 7px",fontSize:12,boxSizing:"border-box",resize:"none",outline:"none"}}/>
               </div>
 
-              {/* DELETE CONFIRMATION */}
               {confirmDelete===openCard&&(
                 <div style={{background:"#FEF2F2",border:"2px solid #DC2626",borderRadius:8,padding:12,textAlign:"center"}}>
                   <div style={{fontSize:13,fontWeight:700,color:"#DC2626",marginBottom:8}}>Delete {c.name}?</div>
@@ -555,20 +770,37 @@ function App(){
           </div>
         );
       })()}
+
+      {/* ══════════════ MOBILE SELECTION BAR ══════════════ */}
+      {mobileSelected&&isMobile&&(
+        <div className="no-print" style={{position:"fixed",bottom:0,left:0,right:0,background:"linear-gradient(135deg,#1E3A5F,#0f172a)",color:"white",padding:"10px 14px",display:"flex",alignItems:"center",gap:10,boxShadow:"0 -4px 20px #0005",zIndex:100}}>
+          <div style={{width:28,height:28,borderRadius:"50%",background:"#3B82F6",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>{all[mobileSelected.id]?.name?.[0]}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:13,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Moving: {all[mobileSelected.id]?.name}</div>
+            <div style={{fontSize:10,opacity:0.7}}>Tap a team or pool to place</div>
+          </div>
+          <button onClick={()=>setMobileSelected(null)} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>Cancel</button>
+        </div>
+      )}
     </div>
   );
 }
 
-function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate}){
+/* ─── StaffCard Component ───────────────────────────────────────────── */
+
+function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,search,isMobile,isSelected,onMobileTap}){
   if(!c)return null;
-  const bg=c.maybe?"#FFFBEB":c.returning?"#EEF4FF":c.status==="plus"?"#FEFCE8":"white";
-  const border=c.maybe?"#FCD34D":c.returning?"#93C5FD":c.status==="plus"?"#FDE68A":"#E2D9CE";
+  const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":c.status==="plus"?"#FEFCE8":"white";
+  const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":c.status==="plus"?"#FDE68A":"#E2D9CE";
   const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":c.status==="plus"?"#D97706":(c.gender==="F"?"#F9A8D4":"#93C5FD");
+  const isMatch=search&&matchesSearch(c,search);
   return(
-    <div draggable onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd}
-      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:"grab",userSelect:"none",boxShadow:"0 1px 3px #0001",marginBottom:1,transition:"all 0.1s"}}
-      onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}
-      onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px #0001";e.currentTarget.style.transform="none";}}>
+    <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd}
+      onClick={isMobile?onMobileTap:undefined}
+      className={isMatch?"search-match":""}
+      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.1s"}}
+      onMouseEnter={e=>{if(!isMobile){e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}}
+      onMouseLeave={e=>{if(!isMobile){e.currentTarget.style.boxShadow=isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001";e.currentTarget.style.transform="none";}}}>
       <div style={{width:22,height:22,borderRadius:"50%",background:avatarBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"white",flexShrink:0}}>{c.name[0]}</div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
