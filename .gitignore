@@ -1,8 +1,2 @@
 node_modules/
 .env
-
-# Data files
-*.pdf
-*.csv
-*.xlsx
-*.xls
