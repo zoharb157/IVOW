@@ -10,9 +10,10 @@
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',Arial,sans-serif;background:#EDEAE5;color:#111;}
-  textarea,input{font-family:inherit;}
+  textarea,input,select{font-family:inherit;font-size:16px!important;}
   ::-webkit-scrollbar{width:6px;height:6px;}
   ::-webkit-scrollbar-thumb{background:#CCC;border-radius:3px;}
+  @media(min-width:641px){textarea,input,select{font-size:12px!important;}}
 </style>
 </head>
 <body>
@@ -92,8 +93,11 @@ function App(){
   const [activityLog,setActivityLog]=useState([]);
   const [showAddForm,setShowAddForm]=useState(false);
   const [confirmDelete,setConfirmDelete]=useState(null);
+  const [showPool,setShowPool]=useState(false);
   const wsRef=useRef(null);
   const ignoreRef=useRef(false);
+  const [isMobile,setIsMobile]=useState(window.innerWidth<640);
+  useEffect(()=>{const h=()=>setIsMobile(window.innerWidth<640);window.addEventListener("resize",h);return()=>window.removeEventListener("resize",h);},[]);
 
   const addLog=(action,details)=>{
     setActivityLog(prev=>[{id:Date.now(),time:new Date().toLocaleString(),action,details},...prev].slice(0,200));
@@ -192,16 +196,16 @@ function App(){
   return(
     <div style={{fontFamily:"'Segoe UI',Arial,sans-serif",minHeight:"100vh",background:"#EDEAE5",color:"#111"}}>
       {/* TOPBAR */}
-      <div style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",color:"white",padding:"0 18px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,boxShadow:"0 3px 18px #0005"}}>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <span style={{fontSize:16,fontWeight:800}}>🏕 IVOW 2026</span>
-          <span style={{opacity:0.35}}>|</span>
-          <span style={{fontSize:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
-          <span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>
+      <div style={{background:"linear-gradient(135deg,#0f172a,#1e3a5f)",color:"white",padding:isMobile?"6px 10px":"0 18px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:4,minHeight:isMobile?"auto":52,boxShadow:"0 3px 18px #0005"}}>
+        <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,flexWrap:"wrap"}}>
+          <span style={{fontSize:isMobile?13:16,fontWeight:800}}>🏕 IVOW 2026</span>
+          {!isMobile&&<span style={{opacity:0.35}}>|</span>}
+          <span style={{fontSize:isMobile?9:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
+          {!isMobile&&<span style={{fontSize:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>}
         </div>
-        <div style={{display:"flex",gap:3}}>
-          {[["board","🗂 Board"],["analytics","📊 Analytics"],["overview","📋 Overview"],["log","📜 Log"]].map(([t2,l])=>(
-            <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:"4px 12px",cursor:"pointer",fontSize:12,fontWeight:tab===t2?700:400}}>{l}</button>
+        <div style={{display:"flex",gap:2}}>
+          {[["board",isMobile?"🗂":"🗂 Board"],["analytics",isMobile?"📊":"📊 Analytics"],["overview",isMobile?"📋":"📋 Overview"],["log",isMobile?"📜":"📜 Log"]].map(([t2,l])=>(
+            <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 12px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:tab===t2?700:400}}>{l}</button>
           ))}
         </div>
       </div>
@@ -215,7 +219,7 @@ function App(){
         const r2=allArr.filter(c=>c.rating===2).length;
         const r3=allArr.filter(c=>c.rating===3).length;
         return(
-          <div style={{background:"#1e293b",color:"white",padding:"3px 18px",display:"flex",gap:12,fontSize:10.5,opacity:0.8,flexWrap:"wrap"}}>
+          <div style={{background:"#1e293b",color:"white",padding:isMobile?"3px 8px":"3px 18px",display:"flex",gap:isMobile?6:12,fontSize:isMobile?9:10.5,opacity:0.8,flexWrap:"wrap"}}>
             <span style={{color:"#93C5FD"}}>↩ Returning ({retCount})</span>
             <span style={{color:"#FCD34D"}}>⏳ Pending ({pendCount})</span>
             <span style={{color:"#A78BFA"}}>★ Team Lead ({leadCount})</span>
@@ -228,8 +232,19 @@ function App(){
 
       {/* BOARD */}
       {tab==="board"&&(
-        <div style={{display:"flex",height:"calc(100vh - 80px)"}}>
-          <div style={{width:250,background:"#FAF7F3",borderRight:"1px solid #DDD5CC",display:"flex",flexDirection:"column",flexShrink:0}}>
+        <div style={{display:"flex",flexDirection:isMobile?"column":"row",height:isMobile?"auto":"calc(100vh - 80px)"}}>
+          {/* Mobile: floating pool toggle */}
+          {isMobile&&(
+            <div style={{padding:"6px 10px",background:"#FAF7F3",borderBottom:"1px solid #DDD5CC",display:"flex",gap:6,alignItems:"center"}}>
+              <button onClick={()=>setShowPool(!showPool)} style={{background:"#0f172a",color:"white",border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>
+                {showPool?"Hide Pool":"Show Pool"} ({filteredPool.length})
+              </button>
+              <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Add</button>
+            </div>
+          )}
+          {/* Pool sidebar - desktop always, mobile togglable */}
+          {(!isMobile||showPool)&&(
+          <div style={{width:isMobile?"100%":250,maxHeight:isMobile?300:"none",background:"#FAF7F3",borderRight:isMobile?"none":"1px solid #DDD5CC",borderBottom:isMobile?"1px solid #DDD5CC":"none",display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 8px 5px",borderBottom:"1px solid #E5DDD4"}}>
               <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search..." style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
               <div style={{display:"flex",gap:4,marginTop:4}}>
@@ -240,10 +255,10 @@ function App(){
                 ))}
               </div>
             </div>
-            <div style={{padding:"4px 8px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            {!isMobile&&<div style={{padding:"4px 8px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</span>
               <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700}}>+ Add Staff</button>
-            </div>
+            </div>}
             <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)}
               onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
               style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
@@ -253,8 +268,9 @@ function App(){
               ))}
             </div>
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"10px 14px 20px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>
+          )}
+          <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 8px 20px":"10px 14px 20px"}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>
               {teams.map((team)=>{
                 const col=getTeamColor(team.id);
                 const s=tStats(team);
@@ -312,9 +328,9 @@ function App(){
 
       {/* ANALYTICS */}
       {tab==="analytics"&&(
-        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+        <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
           <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📊 Team Analytics</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
             {teams.map((team)=>{
               const col=getTeamColor(team.id);
               const s=tStats(team);
@@ -363,7 +379,7 @@ function App(){
 
       {/* OVERVIEW */}
       {tab==="overview"&&(
-        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+        <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
           <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📋 Full Overview</div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
@@ -405,13 +421,13 @@ function App(){
 
       {/* ACTIVITY LOG */}
       {tab==="log"&&(
-        <div style={{padding:"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
+        <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
           <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📜 Activity Log</div>
           {activityLog.length===0?<div style={{textAlign:"center",color:"#999",padding:40,fontSize:13}}>No activity yet. Move staff between teams to see logs here.</div>:(
             <div style={{maxWidth:700}}>
               {activityLog.map(log=>(
-                <div key={log.id} style={{display:"flex",gap:10,padding:"8px 12px",background:"white",borderRadius:8,marginBottom:4,boxShadow:"0 1px 4px #0001",alignItems:"center"}}>
-                  <span style={{fontSize:10,color:"#999",whiteSpace:"nowrap",minWidth:130}}>{log.time}</span>
+                <div key={log.id} style={{display:"flex",flexWrap:isMobile?"wrap":"nowrap",gap:isMobile?4:10,padding:"8px 12px",background:"white",borderRadius:8,marginBottom:4,boxShadow:"0 1px 4px #0001",alignItems:isMobile?"flex-start":"center"}}>
+                  <span style={{fontSize:10,color:"#999",whiteSpace:"nowrap",minWidth:isMobile?0:130}}>{log.time}</span>
                   <span style={{fontSize:10,fontWeight:700,color:log.action==="Move"?"#2563EB":log.action==="Add Staff"?"#16A34A":"#DC2626",background:log.action==="Move"?"#DBEAFE":log.action==="Add Staff"?"#DCFCE7":"#FEE2E2",borderRadius:4,padding:"2px 7px",whiteSpace:"nowrap"}}>{log.action}</span>
                   <span style={{fontSize:12,flex:1}}>{log.details}</span>
                 </div>
