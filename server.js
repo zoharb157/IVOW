@@ -13,6 +13,54 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 // In-memory cache
 let sharedState = null;
 
+// Extract STAFF_INIT from index.html so code updates flow into DB
+function parseStaffInit() {
+  try {
+    const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+    const match = html.match(/const STAFF_INIT\s*=\s*(\{[\s\S]*?\n\};)/);
+    if (!match) return null;
+    // Convert JS object literal to JSON-parseable string
+    let raw = match[1].replace(/;\s*$/, '');
+    // Add quotes around unquoted keys
+    raw = raw.replace(/(\s)(\w[\w-]*)(\s*:)/g, '$1"$2"$3');
+    // Replace single quotes with double quotes
+    raw = raw.replace(/'/g, '"');
+    // Handle trailing commas
+    raw = raw.replace(/,(\s*[}\]])/g, '$1');
+    // Handle null values
+    raw = raw.replace(/:\s*null/g, ':null');
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to parse STAFF_INIT:', e.message);
+    return null;
+  }
+}
+
+// Merge STAFF_INIT defaults into DB state — only fills empty/missing fields
+function mergeDefaults(dbState) {
+  const defaults = parseStaffInit();
+  if (!defaults || !dbState || !dbState.all) return dbState;
+  let changed = false;
+  for (const [id, def] of Object.entries(defaults)) {
+    if (!dbState.all[id]) {
+      // New staff member not in DB — add them
+      dbState.all[id] = def;
+      changed = true;
+      console.log(`  Merged new staff: ${def.name}`);
+    } else {
+      // Existing staff — fill in empty fields only
+      for (const [key, val] of Object.entries(def)) {
+        if (val && (!dbState.all[id][key] || dbState.all[id][key] === '')) {
+          dbState.all[id][key] = val;
+          changed = true;
+        }
+      }
+    }
+  }
+  if (changed) console.log('Merged STAFF_INIT defaults into DB state');
+  return dbState;
+}
+
 // Load state from Supabase on startup
 async function loadState() {
   const { data, error } = await supabase
@@ -21,7 +69,9 @@ async function loadState() {
     .eq('id', 'main')
     .single();
   if (data && data.data && Object.keys(data.data).length > 0) {
-    sharedState = data.data;
+    sharedState = mergeDefaults(data.data);
+    // Save merged state back to DB
+    await saveState(sharedState);
     console.log('State loaded from Supabase');
   } else {
     console.log('No saved state found, starting fresh');
