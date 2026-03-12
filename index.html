@@ -426,8 +426,8 @@ function App(){
     if(filterGender!=="all"&&c.gender!==filterGender)return false;
     if(filterRating!=="all"&&c.rating!==filterRating)return false;
     if(filterStatus==="returning"&&!c.returning)return false;
-    if(filterStatus==="maybe"&&!c.maybe)return false;
-    if(filterStatus==="new"&&(c.returning||c.maybe))return false;
+    if(filterStatus==="shabbat"&&!c.shabbat)return false;
+    if(filterStatus==="new"&&c.returning)return false;
     if(search&&!matchesSearch(c,search))return false;
     return true;
   };
@@ -514,7 +514,7 @@ function App(){
                 {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
               </div>
               <div style={{display:"flex",gap:3,marginTop:3}}>
-                {[["all","All"],["returning","↩"],["maybe","⏳"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
+                {[["all","All"],["returning","↩"],["shabbat","🕎"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
               </div>
               {hasActiveFilter&&<button onClick={()=>{setFilterGender("all");setFilterRating("all");setFilterStatus("all");setSearch("");}} style={{marginTop:3,width:"100%",padding:"3px 0",borderRadius:4,border:"1px dashed #D2CAC0",background:"transparent",color:"#999",cursor:"pointer",fontSize:10}}>✕ Clear filters</button>}
             </div>
