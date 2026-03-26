@@ -38,7 +38,9 @@ const {useState,useEffect,useRef,useCallback}=React;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
+/* Only this exact password grants access. Old passwords never match — stored sessions are cleared if invalid. */
 const APP_PASSWORD="ivow_2026";
+const LEGACY_PASSWORDS=["ivow2026"];
 const RATING_C={1:"#16A34A",2:"#D97706",3:"#DC2626"};
 const RATING_L={1:"Excellent",2:"Good",3:"Average"};
 const CAMP_BASE={
@@ -123,7 +125,7 @@ function migrateState(state){
 function App(){
   const [authed,setAuthed]=useState(()=>localStorage.getItem("ivow_auth")===APP_PASSWORD);
   const [pwInput,setPwInput]=useState("");
-  const [pwError,setPwError]=useState(false);
+  const [loginErr,setLoginErr]=useState(null);
   const [showPw,setShowPw]=useState(false);
   const [all,setAll]=useState(STAFF_INIT);
   const [teams,setTeams]=useState(TEAMS_INIT);
@@ -165,11 +167,20 @@ function App(){
   useEffect(()=>{teamsRef.current=teams;},[teams]);
   useEffect(()=>{poolRef.current=pool;},[pool]);
 
+  useEffect(()=>{
+    const saved=localStorage.getItem("ivow_auth");
+    if(saved!=null&&saved!==APP_PASSWORD){
+      localStorage.removeItem("ivow_auth");
+      setAuthed(false);
+    }
+  },[]);
+
   /* ── Password Gate ───────────────────────────────────────────── */
 
   const handleLogin=()=>{
-    if(pwInput===APP_PASSWORD){localStorage.setItem("ivow_auth",APP_PASSWORD);setAuthed(true);setPwError(false);}
-    else setPwError(true);
+    if(pwInput===APP_PASSWORD){localStorage.setItem("ivow_auth",APP_PASSWORD);setAuthed(true);setLoginErr(null);}
+    else if(LEGACY_PASSWORDS.includes(pwInput))setLoginErr("legacy");
+    else setLoginErr("wrong");
   };
 
   /* ── Toast ───────────────────────────────────────────────────── */
@@ -448,11 +459,12 @@ function App(){
         <div style={{fontSize:12,color:"#999",marginBottom:20}}>Staff Assignment Board</div>
         <form onSubmit={e=>{e.preventDefault();handleLogin();}}>
           <div style={{position:"relative",marginBottom:8}}>
-            <input type={showPw?"text":"password"} value={pwInput} onChange={e=>{setPwInput(e.target.value);setPwError(false);}} placeholder="Enter password" autoFocus
-              style={{width:"100%",padding:"10px 14px",paddingRight:40,borderRadius:8,border:`2px solid ${pwError?"#DC2626":"#E5E7EB"}`,fontSize:14,outline:"none",textAlign:"center",boxSizing:"border-box"}}/>
+            <input type={showPw?"text":"password"} value={pwInput} onChange={e=>{setPwInput(e.target.value);setLoginErr(null);}} placeholder="Enter password" autoFocus
+              style={{width:"100%",padding:"10px 14px",paddingRight:40,borderRadius:8,border:`2px solid ${loginErr?"#DC2626":"#E5E7EB"}`,fontSize:14,outline:"none",textAlign:"center",boxSizing:"border-box"}}/>
             <button type="button" onClick={()=>setShowPw(!showPw)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,opacity:0.5,padding:0}}>{showPw?"🙈":"👁"}</button>
           </div>
-          {pwError&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>Incorrect password</div>}
+          {loginErr==="legacy"&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>The old password no longer works. Use the current password you were given.</div>}
+          {loginErr==="wrong"&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>Incorrect password</div>}
           <button type="submit" style={{width:"100%",padding:"10px",background:"#0f172a",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>Enter</button>
         </form>
       </div>
