@@ -41,6 +41,7 @@ const {useState,useEffect,useRef,useCallback}=React;
 /* Only this exact password grants access. Old passwords never match — stored sessions are cleared if invalid. */
 const APP_PASSWORD="ivow_2026";
 const LEGACY_PASSWORDS=["ivow2026"];
+/* Counselor rank: 1 = best, 3 = weakest. Team avg is lower = stronger (not a “star score”). */
 const RATING_C={1:"#16A34A",2:"#D97706",3:"#DC2626"};
 const RATING_L={1:"Excellent",2:"Good",3:"Average"};
 const CAMP_BASE={
@@ -152,6 +153,7 @@ function App(){
   const [sortDir,setSortDir]=useState("asc");
   const [filterRating,setFilterRating]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
+  const [teamOrderMode,setTeamOrderMode]=useState("camp");
   const wsRef=useRef(null);
   const logRef=useRef([]);
   const undoStack=useRef([]);
@@ -332,7 +334,7 @@ function App(){
   /* ── Export ─────────────────────────────────────────────────── */
 
   const getExportRows=()=>{
-    const headers=["Name","Gender","Age","City","Team","Rating","Status","Returning","Maybe","Shabbat","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"];
+    const headers=["Name","Gender","Age","City","Team","Rank","Status","Returning","Maybe","Shabbat","Role","Phone","Email","Experience","Strengths","Weaknesses","Notes"];
     const rows=[];
     teams.forEach(team=>{team.members.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,team.name,c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});});
     pool.forEach(id=>{const c=all[id];if(!c)return;rows.push([c.name,c.gender,c.dob?getAge(c.dob):"",c.city,"Pool",c.rating?RATING_L[c.rating]:"",c.status,c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||"",c.strengths||"",c.weaknesses||"",c.notes||""]);});
@@ -357,7 +359,7 @@ function App(){
     XLSX.utils.book_append_sheet(wb,ws,"All Staff");
     teams.forEach(team=>{
       const tRows=team.members.map(id=>all[id]).filter(Boolean).map(c=>[c.name,c.gender,c.dob?getAge(c.dob):"",c.city,c.rating?RATING_L[c.rating]:"",c.returning?"Yes":"No",c.maybe?"Yes":"No",c.shabbat?"Yes":"No",c.role,c.phone||"",c.email||"",c.exp||""]);
-      const tHeaders=["Name","Gender","Age","City","Rating","Returning","Maybe","Shabbat","Role","Phone","Email","Experience"];
+      const tHeaders=["Name","Gender","Age","City","Rank","Returning","Maybe","Shabbat","Role","Phone","Email","Experience"];
       const tws=XLSX.utils.aoa_to_sheet([tHeaders,...tRows]);
       tws["!cols"]=tHeaders.map((_,i)=>({wch:Math.max(tHeaders[i].length,Math.max(...tRows.map(r=>(r[i]||"").toString().length),5))+2}));
       XLSX.utils.book_append_sheet(wb,tws,team.name.slice(0,31));
@@ -432,6 +434,24 @@ function App(){
       r1:ms.filter(c=>c.rating===1).length,r2:ms.filter(c=>c.rating===2).length,r3:ms.filter(c=>c.rating===3).length};
   };
 
+  const TEAM_DISPLAY_ORDER=TEAMS_INIT.map(t=>t.id);
+  const teamOrdIdx=id=>{const i=TEAM_DISPLAY_ORDER.indexOf(id);return i<0?999:i;};
+  const displayTeams=(()=>{
+    if(teamOrderMode==="strength"){
+      return [...teams].sort((a,b)=>{
+        const sa=tStats(a),sb=tStats(b);
+        const na=sa.avg!=null?parseFloat(sa.avg):null;
+        const nb=sb.avg!=null?parseFloat(sb.avg):null;
+        if(na==null&&nb==null)return teamOrdIdx(a.id)-teamOrdIdx(b.id);
+        if(na==null)return 1;
+        if(nb==null)return -1;
+        if(na!==nb)return na-nb;
+        return teamOrdIdx(a.id)-teamOrdIdx(b.id);
+      });
+    }
+    return [...teams].sort((a,b)=>teamOrdIdx(a.id)-teamOrdIdx(b.id));
+  })();
+
   const passesFilter=(c)=>{
     if(!c)return false;
     if(filterGender!=="all"&&c.gender!==filterGender)return false;
@@ -498,9 +518,10 @@ function App(){
             <span style={{color:"#FCD34D"}}>⏳ Pend. ({allArr.filter(c=>c.maybe).length})</span>
             <span style={{color:"#A78BFA"}}>★ Lead ({allArr.filter(c=>c.role).length})</span>
             <span style={{color:"#C4B5FD"}}>🕎 Shab. ({allArr.filter(c=>c.shabbat).length})</span>
-            <span style={{color:"#86EFAC"}}>1 Exc ({allArr.filter(c=>c.rating===1).length})</span>
-            <span style={{color:"#FDE68A"}}>2 Good ({allArr.filter(c=>c.rating===2).length})</span>
-            <span style={{color:"#FCA5A5"}}>3 Avg ({allArr.filter(c=>c.rating===3).length})</span>
+            <span style={{color:"#86EFAC"}}>1 best ({allArr.filter(c=>c.rating===1).length})</span>
+            <span style={{color:"#FDE68A"}}>2 ({allArr.filter(c=>c.rating===2).length})</span>
+            <span style={{color:"#FCA5A5"}}>3 weakest ({allArr.filter(c=>c.rating===3).length})</span>
+            <span style={{fontSize:9,opacity:0.65}}>· team avg ↓ = stronger</span>
             {!isMobile&&<span style={{marginLeft:"auto",fontSize:9,opacity:0.5}}>/ Search · Ctrl+Z Undo · Esc Close</span>}
           </div>
         );
@@ -522,7 +543,7 @@ function App(){
               <div style={{display:"flex",gap:4,marginTop:4}}>
                 {["all","F","M"].map(g=>(<button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>{g==="all"?"All":g==="F"?"♀":"♂"}</button>))}
               </div>
-              <div style={{display:"flex",gap:3,marginTop:3}}>
+              <div title="Pool filter by rank: 1=best, 3=weakest" style={{display:"flex",gap:3,marginTop:3}}>
                 {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
               </div>
               <div style={{display:"flex",gap:3,marginTop:3}}>
@@ -543,8 +564,15 @@ function App(){
           </div>
           )}
           <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 8px 20px":"10px 14px 20px"}}>
+            <div className="no-print" style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,fontWeight:700,color:"#555"}}>Team order:</span>
+              <select value={teamOrderMode} onChange={e=>setTeamOrderMode(e.target.value)} style={{padding:"5px 10px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",cursor:"pointer",outline:"none"}}>
+                <option value="camp">Camp layout (default)</option>
+                <option value="strength">Strongest first (lowest rank avg)</option>
+              </select>
+            </div>
             <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:10}}>
-              {teams.map((team)=>{
+              {displayTeams.map((team)=>{
                 const col=getTeamColor(team.id);
                 const s=tStats(team);
                 const isOver=dragOver===team.id;
@@ -566,7 +594,7 @@ function App(){
                           <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
                           <span style={{background:col.accent,color:"white",borderRadius:20,padding:"0 6px",fontSize:10.5,fontWeight:700}}>{s.total}/{s.targetTotal}</span>
                           {s.over&&<span style={{background:"#DC2626",color:"white",borderRadius:20,padding:"0 6px",fontSize:10,fontWeight:700}}>OVER</span>}
-                          {s.avg&&<span style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>⭐{s.avg}</span>}
+                          {s.avg&&<span title="Team rank average — 1=best counselor, lower number = stronger team" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>avg {s.avg}</span>}
                           <span style={{fontSize:10,background:col.light,color:col.accent,borderRadius:20,padding:"0 6px"}}>♀{s.f}{s.overF?<span style={{color:"#DC2626"}}>!</span>:""} ♂{s.m}{s.overM?<span style={{color:"#DC2626"}}>!</span>:""}</span>
                           {s.maybe>0&&<span style={{fontSize:10,background:"#FEF9C3",color:"#854D0E",borderRadius:20,padding:"0 5px"}}>⏳{s.maybe}</span>}
                           <button onClick={()=>{setEditingTeam(team.id);setEditingName(team.name);}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.3,fontSize:11}}>✏️</button>
@@ -602,34 +630,44 @@ function App(){
       {/* ══════════════ ANALYTICS TAB ══════════════ */}
       {tab==="analytics"&&(
         <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
-          <div style={{fontSize:15,fontWeight:800,marginBottom:14}}>📊 Team Analytics</div>
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:15,fontWeight:800}}>📊 Team Analytics</div>
+            <div style={{fontSize:11,color:"#666",marginTop:4}}>Counselor rank: 1 = best, 3 = weakest. Team <strong>avg</strong> is the average rank — <strong>lower = stronger team</strong> (not a star score).</div>
+          </div>
 
           {/* Comparison Summary */}
           <div style={{overflowX:"auto",marginBottom:16}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001",fontSize:11}}>
               <thead><tr style={{background:"#0f172a",color:"white"}}>
                 <th style={{padding:"6px 10px",textAlign:"left",fontWeight:700}}>Metric</th>
-                {teams.map(t=>{const col=getTeamColor(t.id);return <th key={t.id} style={{padding:"6px 8px",textAlign:"center",fontWeight:700,color:col.light,minWidth:70}}>{t.id.replace("-"," ")}</th>;})}
+                {displayTeams.map(t=>{const col=getTeamColor(t.id);return <th key={t.id} style={{padding:"6px 8px",textAlign:"center",fontWeight:700,color:col.light,minWidth:70}}>{t.id.replace("-"," ")}</th>;})}
               </tr></thead>
               <tbody>
                 {[
                   ["Members",t=>{const s=tStats(t);return <span style={{fontWeight:700,color:s.over?"#DC2626":"inherit"}}>{s.total}/{s.targetTotal}</span>;}],
                   ["♀/♂",t=>{const s=tStats(t);return `${s.f}/${s.m}`;}],
-                  ["Avg Rating",t=>{const s=tStats(t);return s.avg?<span style={{color:RATING_C[Math.round(+s.avg)],fontWeight:700}}>{s.avg}</span>:"—";}],
+                  ["Avg rank (↓best)",t=>{const s=tStats(t);return s.avg?<span title="1=best · lower = stronger team" style={{color:RATING_C[Math.round(+s.avg)],fontWeight:700}}>{s.avg}</span>:"—";}],
                   ["Returning",t=>{const s=tStats(t);return s.ret||"0";}],
                   ["Pending",t=>{const s=tStats(t);return s.maybe?<span style={{color:"#D97706",fontWeight:700}}>{s.maybe}</span>:"0";}],
                 ].map(([label,fn])=>(
                   <tr key={label} style={{borderBottom:"1px solid #F3F4F6"}}>
                     <td style={{padding:"5px 10px",fontWeight:600,color:"#555"}}>{label}</td>
-                    {teams.map(t=><td key={t.id} style={{padding:"5px 8px",textAlign:"center"}}>{fn(t)}</td>)}
+                    {displayTeams.map(t=><td key={t.id} style={{padding:"5px 8px",textAlign:"center"}}>{fn(t)}</td>)}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
+          <div className="no-print" style={{display:"flex",alignItems:"center",gap:8,marginBottom:12,flexWrap:"wrap"}}>
+            <span style={{fontSize:11,fontWeight:700,color:"#555"}}>Team order:</span>
+            <select value={teamOrderMode} onChange={e=>setTeamOrderMode(e.target.value)} style={{padding:"5px 10px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",cursor:"pointer",outline:"none"}}>
+              <option value="camp">Camp layout (default)</option>
+              <option value="strength">Strongest first (lowest rank avg)</option>
+            </select>
+          </div>
           <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(auto-fill,minmax(280px,1fr))",gap:10}}>
-            {teams.map((team)=>{
+            {displayTeams.map((team)=>{
               const col=getTeamColor(team.id);const s=tStats(team);const ms=team.members.map(id=>all[id]).filter(Boolean);
               return(
                 <div key={team.id} style={{background:"white",borderRadius:12,padding:13,boxShadow:"0 2px 10px #0001",borderLeft:`4px solid ${col.accent}`}}>
@@ -637,13 +675,13 @@ function App(){
                     <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
                     <div style={{display:"flex",gap:4,alignItems:"center"}}>
                       {s.over&&<span style={{background:"#DC2626",color:"white",borderRadius:20,padding:"1px 8px",fontSize:10,fontWeight:700}}>{s.total}/{s.targetTotal}</span>}
-                      {s.avg&&<span style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:800}}>⭐ {s.avg}</span>}
+                      {s.avg&&<span title="Lower avg = stronger (1=best rank)" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:800}}>avg {s.avg}</span>}
                     </div>
                   </div>
                   <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
                     {[["👥",s.total,"Total"],["♀",s.f,"F"],["♂",s.m,"M"],["↩",s.ret,"Ret."]].map(([i,v,l])=>(<div key={l} style={{background:"#F8F9FA",borderRadius:5,padding:"2px 7px",textAlign:"center"}}><div style={{fontWeight:800,fontSize:12}}>{i}{v}</div><div style={{color:"#999",fontSize:9}}>{l}</div></div>))}
                   </div>
-                  {s.r1+s.r2+s.r3>0&&(<div style={{marginBottom:8}}><div style={{display:"flex",borderRadius:4,overflow:"hidden",height:12}}>{[[1,s.r1,"#16A34A"],[2,s.r2,"#D97706"],[3,s.r3,"#DC2626"]].filter(([,v])=>v>0).map(([r,v,c2])=>(<div key={r} style={{flex:v,background:c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"white",fontWeight:700}}>{v}</div>))}</div><div style={{fontSize:9,color:"#999",marginTop:2}}>{s.r1}× Exc · {s.r2}× Good · {s.r3}× Avg</div></div>)}
+                  {s.r1+s.r2+s.r3>0&&(<div style={{marginBottom:8}}><div style={{display:"flex",borderRadius:4,overflow:"hidden",height:12}}>{[[1,s.r1,"#16A34A"],[2,s.r2,"#D97706"],[3,s.r3,"#DC2626"]].filter(([,v])=>v>0).map(([r,v,c2])=>(<div key={r} style={{flex:v,background:c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"white",fontWeight:700}}>{v}</div>))}</div><div style={{fontSize:9,color:"#999",marginTop:2}}>{s.r1}× rank 1 (best) · {s.r2}× 2 · {s.r3}× 3 (weakest)</div></div>)}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
                     {ms.map(c=>(<div key={c.id} className={search&&matchesSearch(c,search)?"search-match":""} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",background:c.returning?"#EEF4FF":"#F9FAFB",borderRadius:4,border:c.maybe?"1px dashed #FCD34D":"none"}}>
                       {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px"}}>★</span>}
@@ -678,7 +716,7 @@ function App(){
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
               <thead><tr style={{background:"#0f172a",color:"white"}}>
-                {[["name","Counselor"],["gender","Gender"],["age","Age"],["exp","Experience"],["team","Team"],["rating","Rating"],["status","Status"]].map(([k,h])=>(
+                {[["name","Counselor"],["gender","Gender"],["age","Age"],["exp","Experience"],["team","Team"],["rating","Rank (1=best)"],["status","Status"]].map(([k,h])=>(
                   <th key={k} className="sortable-th" onClick={()=>k!=="exp"&&toggleSort(k)} style={{padding:"8px 11px",textAlign:"left",fontSize:11,fontWeight:700,cursor:k==="exp"?"default":"pointer"}}>{h}{k!=="exp"&&sortArrow(k)}</th>
                 ))}
               </tr></thead>
@@ -824,7 +862,8 @@ function App(){
               </div>
 
               <div style={{marginBottom:11}}>
-                <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:4}}>Rating</div>
+                <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:2}}>Counselor rank</div>
+                <div style={{fontSize:9,color:"#888",marginBottom:4}}>1 = best · 3 = weakest (not a star rating)</div>
                 <div style={{display:"flex",gap:5}}>
                   {[1,2,3].map(r=>(<button key={r} onClick={()=>updC(openCard,{rating:c.rating===r?null:r})} style={{flex:1,padding:"7px 0",borderRadius:6,border:`2px solid ${c.rating===r?RATING_C[r]:"#E5E7EB"}`,background:c.rating===r?RATING_C[r]:"white",color:c.rating===r?"white":"#555",cursor:"pointer",fontWeight:700,fontSize:12}}>{r} — {RATING_L[r]}</button>))}
                 </div>
@@ -921,7 +960,7 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
         <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
         {c.exp&&<div style={{fontSize:7.5,color:"#C4B5A4",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{c.exp}</div>}
       </div>
-      <div style={{display:"flex",gap:2,flexShrink:0}}>
+      <div title="Rank: 1=best, 3=weakest" style={{display:"flex",gap:2,flexShrink:0}}>
         {[1,2,3].map(r=>(<button key={r} onClick={e=>{e.stopPropagation();onRate(r);}} style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>))}
       </div>
       <button onClick={e=>{e.stopPropagation();onOpen();}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.35,fontSize:10,padding:"0 1px"}}>✎</button>
