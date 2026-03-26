@@ -98,14 +98,14 @@ const STAFF_INIT={
 };
 
 const TEAMS_INIT=[
-  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
-  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],teamStrengths:"",teamWeaknesses:"",targetF:3,targetM:3},
-  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:2},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:1},
-  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:1},
-  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],teamStrengths:"",teamWeaknesses:"",targetF:1,targetM:2},
-  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],teamStrengths:"",teamWeaknesses:"",targetF:2,targetM:1},
+  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],targetF:3,targetM:3},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],targetF:2,targetM:2},
+  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],targetF:3,targetM:3},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],targetF:2,targetM:2},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],targetF:1,targetM:1},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],targetF:1,targetM:1},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],targetF:1,targetM:2},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],targetF:2,targetM:1},
 ];
 
 /* ─── State Migration ───────────────────────────────────────────────── */
@@ -114,7 +114,8 @@ function migrateState(state){
   if(state.teams){
     state.teams=state.teams.map(t=>{
       const def=TARGET_DEFAULTS[t.id]||{targetF:3,targetM:3};
-      return{...t,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM,teamStrengths:t.teamStrengths??"",teamWeaknesses:t.teamWeaknesses??""};
+      const {teamStrengths:_ts,teamWeaknesses:_tw,...rest}=t;
+      return{...rest,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM};
     });
   }
   if(!state.activityLog)state.activityLog=[];
@@ -602,10 +603,6 @@ function App(){
                       }
                     </div>
                     {!isCollapsed&&<>
-                    <div style={{display:"flex",gap:4,marginBottom:6}}>
-                      <textarea value={team.teamStrengths} onChange={e=>updT(team.id,{teamStrengths:e.target.value})} placeholder="💪 Strengths" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#16A34A"}}/>
-                      <textarea value={team.teamWeaknesses} onChange={e=>updT(team.id,{teamWeaknesses:e.target.value})} placeholder="⚠️ Weaknesses" rows={2} style={{flex:1,resize:"none",borderRadius:5,border:`1px solid ${col.border}77`,padding:"3px 5px",fontSize:10.5,background:"white",outline:"none",color:"#DC2626"}}/>
-                    </div>
                     {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button onClick={()=>handleMobileDrop(team.id)} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
                       {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
