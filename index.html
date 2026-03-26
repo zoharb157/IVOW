@@ -38,7 +38,7 @@ const {useState,useEffect,useRef,useCallback}=React;
 
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
-const APP_PASSWORD="ivow2026";
+const APP_PASSWORD="ivow_2026";
 const RATING_C={1:"#16A34A",2:"#D97706",3:"#DC2626"};
 const RATING_L={1:"Excellent",2:"Good",3:"Average"};
 const CAMP_BASE={
@@ -754,7 +754,7 @@ function App(){
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
                 <div>
                   <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:3,flexWrap:"wrap"}}>
-                    <span style={{fontSize:17,fontWeight:800}}>{c.name}</span>
+                    <input value={c.name||""} onChange={e=>updC(openCard,{name:e.target.value})} placeholder="Full name" style={{fontSize:17,fontWeight:800,border:"1.5px solid #E5E7EB",borderRadius:8,padding:"4px 8px",minWidth:180,maxWidth:"100%",flex:1,outline:"none",boxSizing:"border-box"}}/>
                     {c.role&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>★ {c.role}</span>}
                     {c.maybe?<span style={{background:"#F59E0B",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>⏳ Pending</span>:c.returning?<span style={{background:"#2563EB",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>↩ Returning 2025</span>:null}
                     {c.shabbat&&<span style={{background:"#7C3AED",color:"white",borderRadius:20,padding:"2px 9px",fontSize:10,fontWeight:700}}>🕎 Shabbat</span>}
