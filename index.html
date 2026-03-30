@@ -101,17 +101,23 @@ const STAFF_INIT={
 };
 
 const TEAMS_INIT=[
-  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],targetF:3,targetM:3,boardColumn:"left"},
+  {id:"CBB-IVOW",name:"CBB",members:["yael-f","hania","tehila","yaar","eilon","gal"],targetF:3,targetM:3,boardColumn:"left"},
   {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],targetF:2,targetM:2,boardColumn:"right"},
-  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],targetF:3,targetM:3,boardColumn:"left"},
+  {id:"YCC-IVOW",name:"YCC",members:["ofek","adar","gili","itai","dvir","ziv"],targetF:3,targetM:3,boardColumn:"left"},
   {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],targetF:2,targetM:2,boardColumn:"right"},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],targetF:1,targetM:1,boardColumn:"left"},
+  {id:"MASAD-IVOW",name:"MASAD",members:["hadar","sagiv"],targetF:1,targetM:1,boardColumn:"left"},
   {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],targetF:1,targetM:1,boardColumn:"right"},
   {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],targetF:1,targetM:2,boardColumn:"left"},
   {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],targetF:2,targetM:1,boardColumn:"right"},
 ];
 
 /* ─── State Migration ───────────────────────────────────────────────── */
+
+function stripIvowFromTeamName(name){
+  if(typeof name!=="string")return name;
+  const n=name.replace(/\s*[—–-]\s*IVOW\s*$/i,"").trim();
+  return n||name;
+}
 
 function migrateState(state){
   const tn=state.teams?.length||0;
@@ -127,7 +133,8 @@ function migrateState(state){
         if(legacySplit!=null)boardColumn=i<legacySplit?"left":"right";
         else boardColumn=i%2===0?"left":"right";
       }
-      return{...rest,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM,boardColumn};
+      const name=stripIvowFromTeamName(t.name);
+      return{...rest,name,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM,boardColumn};
     });
   }
   if(!state.activityLog)state.activityLog=[];
