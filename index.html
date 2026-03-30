@@ -154,6 +154,7 @@ function App(){
   const [sortDir,setSortDir]=useState("asc");
   const [filterRating,setFilterRating]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
+  const [hideRanks,setHideRanks]=useState(()=>localStorage.getItem("ivow_hide_ranks")==="1");
   const wsRef=useRef(null);
   const logRef=useRef([]);
   const undoStack=useRef([]);
@@ -168,6 +169,9 @@ function App(){
   useEffect(()=>{allRef.current=all;},[all]);
   useEffect(()=>{teamsRef.current=teams;},[teams]);
   useEffect(()=>{poolRef.current=pool;},[pool]);
+  useEffect(()=>{localStorage.setItem("ivow_hide_ranks",hideRanks?"1":"0");},[hideRanks]);
+  useEffect(()=>{if(hideRanks)setFilterRating("all");},[hideRanks]);
+  useEffect(()=>{if(hideRanks&&sortCol==="rating"){setSortCol(null);setSortDir("asc");}},[hideRanks,sortCol]);
 
   useEffect(()=>{
     const saved=localStorage.getItem("ivow_auth");
@@ -500,10 +504,16 @@ function App(){
             <span style={{color:"#FCD34D"}}>⏳ Pend. ({allArr.filter(c=>c.maybe).length})</span>
             <span style={{color:"#A78BFA"}}>★ Lead ({allArr.filter(c=>c.role).length})</span>
             <span style={{color:"#C4B5FD"}}>🕎 Shab. ({allArr.filter(c=>c.shabbat).length})</span>
-            <span style={{color:"#86EFAC"}}>1 best ({allArr.filter(c=>c.rating===1).length})</span>
-            <span style={{color:"#FDE68A"}}>2 ({allArr.filter(c=>c.rating===2).length})</span>
-            <span style={{color:"#FCA5A5"}}>3 weakest ({allArr.filter(c=>c.rating===3).length})</span>
-            <span style={{fontSize:9,opacity:0.65}}>· team avg ↓ = stronger</span>
+            {!hideRanks&&<>
+              <span style={{color:"#86EFAC"}}>1 best ({allArr.filter(c=>c.rating===1).length})</span>
+              <span style={{color:"#FDE68A"}}>2 ({allArr.filter(c=>c.rating===2).length})</span>
+              <span style={{color:"#FCA5A5"}}>3 weakest ({allArr.filter(c=>c.rating===3).length})</span>
+              <span style={{fontSize:9,opacity:0.65}}>· team avg ↓ = stronger</span>
+            </>}
+            <label title="הסתר דירוגי מדריכים (למשל בזמן שיתוף מסך). מייצאים ל-Excel עדיין כוללים דירוג." style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer",marginLeft:hideRanks?0:6,fontSize:10,opacity:0.95,whiteSpace:"nowrap"}}>
+              <input type="checkbox" checked={hideRanks} onChange={e=>setHideRanks(e.target.checked)} style={{accentColor:"#93C5FD",width:13,height:13}}/>
+              <span>Hide ranks</span>
+            </label>
             {!isMobile&&<span style={{marginLeft:"auto",fontSize:9,opacity:0.5}}>/ Search · Ctrl+Z Undo · Esc Close</span>}
           </div>
         );
@@ -525,9 +535,9 @@ function App(){
               <div style={{display:"flex",gap:4,marginTop:4}}>
                 {["all","F","M"].map(g=>(<button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>{g==="all"?"All":g==="F"?"♀":"♂"}</button>))}
               </div>
-              <div title="Pool filter by rank: 1=best, 3=weakest" style={{display:"flex",gap:3,marginTop:3}}>
+              {!hideRanks&&<div title="Pool filter by rank: 1=best, 3=weakest" style={{display:"flex",gap:3,marginTop:3}}>
                 {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
-              </div>
+              </div>}
               <div style={{display:"flex",gap:3,marginTop:3}}>
                 {[["all","All"],["returning","↩"],["shabbat","🕎"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
               </div>
@@ -541,7 +551,7 @@ function App(){
               style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
               {mobileSelected&&isMobile&&(<button onClick={()=>handleMobileDrop("pool")} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:4,background:"#DBEAFE",border:"2px dashed #3B82F6",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:"#1D4ED8"}}>📥 Drop to Pool</button>)}
               {filteredPool.length===0&&!mobileSelected&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
-              {filteredPool.map(id=>(<StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,"pool")}/>))}
+              {filteredPool.map(id=>(<StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,"pool")}/>))}
             </div>
           </div>
           )}
@@ -552,7 +562,7 @@ function App(){
                 const s=tStats(team);
                 const isOver=dragOver===team.id;
                 const isCollapsed=collapsed[team.id];
-                const sortR=arr=>[...arr].sort((a,b)=>(all[a]?.rating??99)-(all[b]?.rating??99));
+                const sortR=arr=>hideRanks?[...arr].sort((a,b)=>(all[a]?.name||"").localeCompare(all[b]?.name||"","he",{sensitivity:"base"})):[...arr].sort((a,b)=>(all[a]?.rating??99)-(all[b]?.rating??99));
                 const females=sortR(team.members.filter(id=>all[id]?.gender==="F"));
                 const males=sortR(team.members.filter(id=>all[id]?.gender==="M"));
                 return(
@@ -569,7 +579,7 @@ function App(){
                           <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
                           <span style={{background:col.accent,color:"white",borderRadius:20,padding:"0 6px",fontSize:10.5,fontWeight:700}}>{s.total}/{s.targetTotal}</span>
                           {s.over&&<span style={{background:"#DC2626",color:"white",borderRadius:20,padding:"0 6px",fontSize:10,fontWeight:700}}>OVER</span>}
-                          {s.avg&&<span title="Team rank average — 1=best counselor, lower number = stronger team" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>avg {s.avg}</span>}
+                          {!hideRanks&&s.avg&&<span title="Team rank average — 1=best counselor, lower number = stronger team" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>avg {s.avg}</span>}
                           <span style={{fontSize:10,background:col.light,color:col.accent,borderRadius:20,padding:"0 6px"}}>♀{s.f}{s.overF?<span style={{color:"#DC2626"}}>!</span>:""} ♂{s.m}{s.overM?<span style={{color:"#DC2626"}}>!</span>:""}</span>
                           {s.maybe>0&&<span style={{fontSize:10,background:"#FEF9C3",color:"#854D0E",borderRadius:20,padding:"0 5px"}}>⏳{s.maybe}</span>}
                           <button onClick={()=>{setEditingTeam(team.id);setEditingName(team.name);}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.3,fontSize:11}}>✏️</button>
@@ -579,12 +589,12 @@ function App(){
                     {!isCollapsed&&<>
                     {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button onClick={()=>handleMobileDrop(team.id)} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
-                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
                         <div key={`ef-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♀ Open spot</span></div>
                       ))}
                       {(females.length>0||((team.targetF||0)-females.length)>0)&&(males.length>0||((team.targetM||0)-males.length)>0)&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
-                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetM||0)-males.length)}).map((_,i)=>(
                         <div key={`em-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♂ Open spot</span></div>
                       ))}
@@ -603,7 +613,8 @@ function App(){
         <div style={{padding:isMobile?"10px":"18px 22px",overflowY:"auto",height:"calc(100vh - 80px)"}}>
           <div style={{marginBottom:14}}>
             <div style={{fontSize:15,fontWeight:800}}>📊 Team Analytics</div>
-            <div style={{fontSize:11,color:"#666",marginTop:4}}>Counselor rank: 1 = best, 3 = weakest. Team <strong>avg</strong> is the average rank — <strong>lower = stronger team</strong> (not a star score).</div>
+            {!hideRanks&&<div style={{fontSize:11,color:"#666",marginTop:4}}>Counselor rank: 1 = best, 3 = weakest. Team <strong>avg</strong> is the average rank — <strong>lower = stronger team</strong> (not a star score).</div>}
+            {hideRanks&&<div style={{fontSize:11,color:"#666",marginTop:4}}>Counselor ranks are hidden. Turn off <strong>Hide ranks</strong> in the bar above to see rank analytics.</div>}
           </div>
 
           {/* Comparison Summary */}
@@ -617,7 +628,7 @@ function App(){
                 {[
                   ["Members",t=>{const s=tStats(t);return <span style={{fontWeight:700,color:s.over?"#DC2626":"inherit"}}>{s.total}/{s.targetTotal}</span>;}],
                   ["♀/♂",t=>{const s=tStats(t);return `${s.f}/${s.m}`;}],
-                  ["Avg rank (↓best)",t=>{const s=tStats(t);return s.avg?<span title="1=best · lower = stronger team" style={{color:RATING_C[Math.round(+s.avg)],fontWeight:700}}>{s.avg}</span>:"—";}],
+                  ...(!hideRanks?[["Avg rank (↓best)",t=>{const s=tStats(t);return s.avg?<span title="1=best · lower = stronger team" style={{color:RATING_C[Math.round(+s.avg)],fontWeight:700}}>{s.avg}</span>:"—";}]]:[]),
                   ["Returning",t=>{const s=tStats(t);return s.ret||"0";}],
                   ["Pending",t=>{const s=tStats(t);return s.maybe?<span style={{color:"#D97706",fontWeight:700}}>{s.maybe}</span>:"0";}],
                 ].map(([label,fn])=>(
@@ -639,20 +650,20 @@ function App(){
                     <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
                     <div style={{display:"flex",gap:4,alignItems:"center"}}>
                       {s.over&&<span style={{background:"#DC2626",color:"white",borderRadius:20,padding:"1px 8px",fontSize:10,fontWeight:700}}>{s.total}/{s.targetTotal}</span>}
-                      {s.avg&&<span title="Lower avg = stronger (1=best rank)" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:800}}>avg {s.avg}</span>}
+                      {!hideRanks&&s.avg&&<span title="Lower avg = stronger (1=best rank)" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"2px 10px",fontSize:12,fontWeight:800}}>avg {s.avg}</span>}
                     </div>
                   </div>
                   <div style={{display:"flex",gap:5,marginBottom:8,flexWrap:"wrap"}}>
                     {[["👥",s.total,"Total"],["♀",s.f,"F"],["♂",s.m,"M"],["↩",s.ret,"Ret."]].map(([i,v,l])=>(<div key={l} style={{background:"#F8F9FA",borderRadius:5,padding:"2px 7px",textAlign:"center"}}><div style={{fontWeight:800,fontSize:12}}>{i}{v}</div><div style={{color:"#999",fontSize:9}}>{l}</div></div>))}
                   </div>
-                  {s.r1+s.r2+s.r3>0&&(<div style={{marginBottom:8}}><div style={{display:"flex",borderRadius:4,overflow:"hidden",height:12}}>{[[1,s.r1,"#16A34A"],[2,s.r2,"#D97706"],[3,s.r3,"#DC2626"]].filter(([,v])=>v>0).map(([r,v,c2])=>(<div key={r} style={{flex:v,background:c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"white",fontWeight:700}}>{v}</div>))}</div><div style={{fontSize:9,color:"#999",marginTop:2}}>{s.r1}× rank 1 (best) · {s.r2}× 2 · {s.r3}× 3 (weakest)</div></div>)}
+                  {!hideRanks&&s.r1+s.r2+s.r3>0&&(<div style={{marginBottom:8}}><div style={{display:"flex",borderRadius:4,overflow:"hidden",height:12}}>{[[1,s.r1,"#16A34A"],[2,s.r2,"#D97706"],[3,s.r3,"#DC2626"]].filter(([,v])=>v>0).map(([r,v,c2])=>(<div key={r} style={{flex:v,background:c2,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,color:"white",fontWeight:700}}>{v}</div>))}</div><div style={{fontSize:9,color:"#999",marginTop:2}}>{s.r1}× rank 1 (best) · {s.r2}× 2 · {s.r3}× 3 (weakest)</div></div>)}
                   <div style={{display:"flex",flexDirection:"column",gap:2}}>
                     {ms.map(c=>(<div key={c.id} className={search&&matchesSearch(c,search)?"search-match":""} style={{display:"flex",alignItems:"center",gap:4,padding:"2px 5px",background:c.returning?"#EEF4FF":"#F9FAFB",borderRadius:4,border:c.maybe?"1px dashed #FCD34D":"none"}}>
                       {c.role&&<span style={{fontSize:8,background:"#7C3AED",color:"white",borderRadius:3,padding:"1px 3px"}}>★</span>}
                       {c.maybe&&<span style={{fontSize:8,background:"#FEF9C3",color:"#854D0E",borderRadius:3,padding:"1px 3px"}}>⏳</span>}
                       <span style={{flex:1,fontSize:11,fontWeight:600}}>{c.name}</span>
                       <span style={{fontSize:9,color:"#999"}}>{c.gender==="F"?"♀":"♂"}</span>
-                      {c.rating?<span style={{fontSize:9,background:RATING_C[c.rating],color:"white",borderRadius:3,padding:"1px 6px",fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{fontSize:10,color:"#DDD"}}>—</span>}
+                      {!hideRanks&&(c.rating?<span style={{fontSize:9,background:RATING_C[c.rating],color:"white",borderRadius:3,padding:"1px 6px",fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{fontSize:10,color:"#DDD"}}>—</span>)}
                     </div>))}
                   </div>
                 </div>
@@ -680,7 +691,7 @@ function App(){
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
               <thead><tr style={{background:"#0f172a",color:"white"}}>
-                {[["name","Counselor"],["gender","Gender"],["age","Age"],["exp","Experience"],["team","Team"],["rating","Rank (1=best)"],["status","Status"]].map(([k,h])=>(
+                {[["name","Counselor"],["gender","Gender"],["age","Age"],["exp","Experience"],["team","Team"],["rating","Rank (1=best)"],["status","Status"]].filter(([k])=>!hideRanks||k!=="rating").map(([k,h])=>(
                   <th key={k} className="sortable-th" onClick={()=>k!=="exp"&&toggleSort(k)} style={{padding:"8px 11px",textAlign:"left",fontSize:11,fontWeight:700,cursor:k==="exp"?"default":"pointer"}}>{h}{k!=="exp"&&sortArrow(k)}</th>
                 ))}
               </tr></thead>
@@ -701,7 +712,7 @@ function App(){
                       <td style={{padding:"6px 11px",fontSize:11,color:"#666"}}>{c.dob?getAge(c.dob):"—"}</td>
                       <td style={{padding:"6px 11px",fontSize:10.5,color:"#777",maxWidth:180}}>{c.exp}</td>
                       <td style={{padding:"6px 11px"}}><span style={{background:c.teamId==="pool"?"#94A3B8":col.accent,color:"white",borderRadius:4,padding:"2px 7px",fontSize:10.5,fontWeight:700}}>{c.teamName}</span></td>
-                      <td style={{padding:"6px 11px"}}>{c.rating?<span style={{background:RATING_C[c.rating],color:"white",borderRadius:4,padding:"2px 8px",fontSize:10.5,fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{color:"#DDD"}}>—</span>}</td>
+                      {!hideRanks&&<td style={{padding:"6px 11px"}}>{c.rating?<span style={{background:RATING_C[c.rating],color:"white",borderRadius:4,padding:"2px 8px",fontSize:10.5,fontWeight:700}}>{RATING_L[c.rating]}</span>:<span style={{color:"#DDD"}}>—</span>}</td>}
                       <td style={{padding:"6px 11px",fontSize:10.5}}>
                         {c.maybe?<span style={{color:"#D97706"}}>⏳ Pending</span>:c.returning?<span style={{color:"#2563EB"}}>↩ Returning</span>:<span style={{color:"#16A34A"}}>✅ New</span>}
                       </td>
@@ -825,13 +836,13 @@ function App(){
                 </div>
               </div>
 
-              <div style={{marginBottom:11}}>
+              {!hideRanks&&<div style={{marginBottom:11}}>
                 <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:2}}>Counselor rank</div>
                 <div style={{fontSize:9,color:"#888",marginBottom:4}}>1 = best · 3 = weakest (not a star rating)</div>
                 <div style={{display:"flex",gap:5}}>
                   {[1,2,3].map(r=>(<button key={r} onClick={()=>updC(openCard,{rating:c.rating===r?null:r})} style={{flex:1,padding:"7px 0",borderRadius:6,border:`2px solid ${c.rating===r?RATING_C[r]:"#E5E7EB"}`,background:c.rating===r?RATING_C[r]:"white",color:c.rating===r?"white":"#555",cursor:"pointer",fontWeight:700,fontSize:12}}>{r} — {RATING_L[r]}</button>))}
                 </div>
-              </div>
+              </div>}
 
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
                 <label style={{fontSize:10.5,display:"flex",alignItems:"center",gap:4,cursor:"pointer"}}><input type="checkbox" checked={c.returning} onChange={e=>updC(openCard,{returning:e.target.checked})}/><span style={{fontWeight:600,color:"#2563EB"}}>↩ Returning</span></label>
@@ -902,7 +913,7 @@ function App(){
 
 /* ─── StaffCard Component ───────────────────────────────────────────── */
 
-function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap,dimmed}){
+function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap,dimmed,hideRanks}){
   if(!c)return null;
   const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":"white";
   const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":"#E2D9CE";
@@ -924,9 +935,9 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
         <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
         {c.exp&&<div style={{fontSize:7.5,color:"#C4B5A4",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{c.exp}</div>}
       </div>
-      <div title="Rank: 1=best, 3=weakest" style={{display:"flex",gap:2,flexShrink:0}}>
+      {!hideRanks&&<div title="Rank: 1=best, 3=weakest" style={{display:"flex",gap:2,flexShrink:0}}>
         {[1,2,3].map(r=>(<button key={r} onClick={e=>{e.stopPropagation();onRate(r);}} style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>))}
-      </div>
+      </div>}
       <button onClick={e=>{e.stopPropagation();onOpen();}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.35,fontSize:10,padding:"0 1px"}}>✎</button>
     </div>
   );
