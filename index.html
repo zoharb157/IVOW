@@ -564,6 +564,8 @@ function App(){
           <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 8px 20px":"10px 14px 20px"}}>
             {(()=>{
               const colStack={flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4};
+              const isSitTeam=t=>/-SIT$/i.test(t.id);
+              const boardTeams=[...teams.filter(t=>!isSitTeam(t)),...teams.filter(t=>isSitTeam(t))];
               const renderTeam=(team)=>{
                 const col=getTeamColor(team.id);
                 const s=tStats(team);
@@ -610,11 +612,11 @@ function App(){
                   </div>
                 );
               };
-              if(isMobile)return <div style={colStack}>{teams.map(renderTeam)}</div>;
+              if(isMobile)return <div style={colStack}>{boardTeams.map(renderTeam)}</div>;
               return(
                 <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <div style={colStack}>{teams.filter((_,i)=>i%2===0).map(renderTeam)}</div>
-                  <div style={colStack}>{teams.filter((_,i)=>i%2===1).map(renderTeam)}</div>
+                  <div style={colStack}>{boardTeams.filter((_,i)=>i%2===0).map(renderTeam)}</div>
+                  <div style={colStack}>{boardTeams.filter((_,i)=>i%2===1).map(renderTeam)}</div>
                 </div>
               );
             })()}
