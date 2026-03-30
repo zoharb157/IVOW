@@ -136,7 +136,6 @@ function App(){
   const [teams,setTeams]=useState(TEAMS_INIT);
   const [pool,setPool]=useState([]);
   const [activityLog,setActivityLog]=useState([]);
-  const [dragInfo,setDragInfo]=useState(null);
   const [dragOver,setDragOver]=useState(null);
   const [tab,setTab]=useState("board");
   const [openCard,setOpenCard]=useState(null);
@@ -310,16 +309,10 @@ function App(){
     addLog("Swap",`${all[idA]?.name} ↔ ${all[idB]?.name}`);
     setPool(np);setTeams(nt);push(all,nt,np);
   };
-  const handleSwapDrop=(targetId,targetFrom)=>{
-    if(!dragInfo||dragInfo.kind!=="staff"||dragInfo.id===targetId)return;
-    swapStaff(dragInfo.id,dragInfo.from,targetId,targetFrom);
-    setDragInfo(null);setDragOver(null);
-  };
-
   const reorderTeams=(draggedTeamId,targetTeamId)=>{
     if(draggedTeamId===targetTeamId)return;
     snapshot();
-    const arr=[...teams];
+    const arr=[...teamsRef.current];
     const i=arr.findIndex(t=>t.id===draggedTeamId);
     const j=arr.findIndex(t=>t.id===targetTeamId);
     if(i<0||j<0)return;
@@ -330,7 +323,111 @@ function App(){
     arr.splice(j2,0,row);
     addLog("Reorder teams",`${nm} → before ${tNm}`);
     setTeams(arr);push(all,arr,pool);
-    setDragInfo(null);setDragOver(null);
+    setDragOver(null);
+  };
+
+  /* Pointer-follow ghost (iOS-style lift): teams + desktop staff */
+  const pilotMetaRef=useRef(null);
+  const pilotMovedRef=useRef(false);
+  const [pilotPos,setPilotPos]=useState(null);
+  const [pilotGhost,setPilotGhost]=useState(null);
+
+  const findTeamIdUnderPoint=(x,y,excludeId)=>{
+    const els=document.elementsFromPoint(x,y);
+    for(const el of els){
+      const w=el.closest?.("[data-team-card]");
+      if(w){
+        const id=w.getAttribute("data-team-card");
+        if(id&&id!==excludeId)return id;
+      }
+    }
+    return null;
+  };
+  const isOverPoolZone=(x,y)=>document.elementsFromPoint(x,y).some(el=>el.closest?.("[data-drop-zone=pool]"));
+
+  const endPilotSessionFixed=(e)=>{
+    const clientX=e.clientX;
+    const clientY=e.clientY;
+    const sess=pilotMetaRef.current;
+    const didMove=pilotMovedRef.current;
+    pilotMetaRef.current=null;
+    pilotMovedRef.current=false;
+    setPilotPos(null);
+    setPilotGhost(null);
+    setDragOver(null);
+    if(!sess)return;
+    if(sess.type==="team"){
+      const tid=findTeamIdUnderPoint(clientX,clientY,sess.teamId);
+      if(tid)reorderTeams(sess.teamId,tid);
+      return;
+    }
+    if(sess.type==="staff"){
+      if(!didMove){setOpenCard(sess.staffId);return;}
+      const els=document.elementsFromPoint(clientX,clientY);
+      for(const el of els){
+        const row=el.closest?.("[data-staff-row]");
+        if(row){
+          const other=row.getAttribute("data-staff-row");
+          const otherFrom=row.getAttribute("data-staff-from");
+          if(other&&otherFrom&&other!==sess.staffId){swapStaff(sess.staffId,sess.from,other,otherFrom);return;}
+        }
+      }
+      if(isOverPoolZone(clientX,clientY)){moveTo(sess.staffId,sess.from,"pool");return;}
+      const teamT=findTeamIdUnderPoint(clientX,clientY,null);
+      if(teamT&&teamT!==sess.from)moveTo(sess.staffId,sess.from,teamT);
+    }
+  };
+
+  const attachPilotWindowListeners=()=>{
+    const move=(ev)=>{
+      const m=pilotMetaRef.current;
+      if(!m)return;
+      ev.preventDefault();
+      if(Math.abs(ev.clientX-m.startX)+Math.abs(ev.clientY-m.startY)>6)pilotMovedRef.current=true;
+      setPilotPos({x:ev.clientX,y:ev.clientY});
+      if(m.type==="team")setDragOver(findTeamIdUnderPoint(ev.clientX,ev.clientY,m.teamId)||null);
+      else{
+        const t=findTeamIdUnderPoint(ev.clientX,ev.clientY,null);
+        setDragOver(t||(isOverPoolZone(ev.clientX,ev.clientY)?"pool":null));
+      }
+    };
+    const end=(ev)=>{
+      window.removeEventListener("pointermove",move);
+      window.removeEventListener("pointerup",end);
+      window.removeEventListener("pointercancel",end);
+      endPilotSessionFixed(ev);
+    };
+    window.addEventListener("pointermove",move,{passive:false});
+    window.addEventListener("pointerup",end);
+    window.addEventListener("pointercancel",end);
+  };
+
+  const startTeamPilot=(e,team)=>{
+    if(e.button!==0)return;
+    e.preventDefault();e.stopPropagation();
+    const card=e.currentTarget.closest("[data-team-card]");
+    if(!card)return;
+    const r=card.getBoundingClientRect();
+    const col=getTeamColor(team.id);
+    const h=Math.min(110,Math.max(56,r.height));
+    pilotMetaRef.current={type:"team",teamId:team.id,startX:e.clientX,startY:e.clientY,offX:e.clientX-r.left,offY:e.clientY-r.top,w:r.width,h};
+    pilotMovedRef.current=false;
+    setPilotGhost({type:"team",teamId:team.id,offX:e.clientX-r.left,offY:e.clientY-r.top,w:r.width,h,name:team.name,col});
+    setPilotPos({x:e.clientX,y:e.clientY});
+    attachPilotWindowListeners();
+  };
+
+  const startStaffPilot=(e,staffId,from,rowEl)=>{
+    if(e.button!==0)return;
+    e.preventDefault();e.stopPropagation();
+    const r=rowEl.getBoundingClientRect();
+    const c=all[staffId];
+    if(!c)return;
+    pilotMetaRef.current={type:"staff",staffId,from,startX:e.clientX,startY:e.clientY,offX:e.clientX-r.left,offY:e.clientY-r.top,w:r.width,h:r.height};
+    pilotMovedRef.current=false;
+    setPilotGhost({type:"staff",staffId,offX:e.clientX-r.left,offY:e.clientY-r.top,w:r.width,h:r.height,c});
+    setPilotPos({x:e.clientX,y:e.clientY});
+    attachPilotWindowListeners();
   };
 
   const addStaff=(staffData)=>{
@@ -569,11 +666,10 @@ function App(){
               <span style={{fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</span>
               <button type="button" onClick={()=>setShowAddForm(true)} title="הוסף מדריך חדש לבריכה · Add new staff to the pool" style={{background:"#16A34A",color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700}}>+ Add Staff</button>
             </div>}
-            <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)} onDrop={e=>{e.preventDefault();if(dragInfo&&dragInfo.kind==="staff")moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
-              style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
+            <div data-drop-zone="pool" style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
               {mobileSelected&&isMobile&&(<button type="button" onClick={()=>handleMobileDrop("pool")} className="mobile-target" title="שחרר את המדריך הנבחר לבריכה (ללא צוות) · Place selected staff in the unassigned pool" style={{width:"100%",padding:"8px",marginBottom:4,background:"#DBEAFE",border:"2px dashed #3B82F6",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:"#1D4ED8"}}>📥 Drop to Pool</button>)}
               {filteredPool.length===0&&!mobileSelected&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
-              {filteredPool.map(id=>(<StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} teamDragActive={dragInfo?.kind==="team"} onDragStart={iid=>setDragInfo({kind:"staff",id:iid,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,"pool")}/>))}
+              {filteredPool.map(id=>(<StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} pilotDimmed={pilotGhost?.type==="staff"&&pilotGhost.staffId===id} onStaffPilotDown={!isMobile?startStaffPilot:undefined} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})} onMobileTap={()=>handleMobileTap(id,"pool")}/>))}
             </div>
           </div>
           )}
@@ -588,12 +684,13 @@ function App(){
                 const sortR=arr=>hideRanks?[...arr].sort((a,b)=>(all[a]?.name||"").localeCompare(all[b]?.name||"","he",{sensitivity:"base"})):[...arr].sort((a,b)=>(all[a]?.rating??99)-(all[b]?.rating??99));
                 const females=sortR(team.members.filter(id=>all[id]?.gender==="F"));
                 const males=sortR(team.members.filter(id=>all[id]?.gender==="M"));
+                const cardLifted=pilotGhost?.type==="team"&&pilotGhost.teamId===team.id;
                 return(
-                  <div key={team.id} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(null);}} onDrop={e=>{e.preventDefault();if(dragInfo?.kind==="staff")moveTo(dragInfo.id,dragInfo.from,team.id);else if(dragInfo?.kind==="team"&&dragInfo.teamId!==team.id)reorderTeams(dragInfo.teamId,team.id);setDragOver(null);}}
-                    style={{width:"100%",background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"border-color 0.12s, box-shadow 0.12s, background 0.12s"}}>
+                  <div key={team.id} data-team-card={team.id}
+                    style={{width:"100%",background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"border-color 0.12s, box-shadow 0.12s, background 0.12s, opacity 0.15s",opacity:cardLifted?0.38:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:isCollapsed?0:6}}>
                       <button type="button" onClick={()=>toggleCollapse(team.id)} title={isCollapsed?"הרחב את רשימת המדריכים בקבוצה · Expand team member list":"כווץ את רשימת המדריכים (רק כותרת) · Collapse to header only"} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,opacity:0.4,padding:0}}>{isCollapsed?"▶":"▼"}</button>
-                      <span draggable={true} title="גרור לסידור הקבוצה על הלוח · Drag the team to reorder" onDragStart={e=>{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",team.id);setDragInfo({kind:"team",teamId:team.id});}} onDragEnd={()=>{setDragInfo(d=>d?.kind==="team"?null:d);setDragOver(null);}} style={{cursor:"grab",WebkitUserDrag:"element",userSelect:"none",touchAction:"none",fontSize:12,color:col.accent,opacity:0.55,lineHeight:1,padding:"2px 4px"}} aria-hidden>⠿</span>
+                      <span role="presentation" title="גרור — התצוגה נדבקת לאצבע/לעכבר כמו באייפון · Drag; preview follows your finger/cursor" onPointerDown={e=>startTeamPilot(e,team)} style={{cursor:"grab",touchAction:"none",userSelect:"none",fontSize:12,color:col.accent,opacity:0.55,lineHeight:1,padding:"4px 6px"}}>⠿</span>
                       {editingTeam===team.id
                         ?<div style={{display:"flex",gap:4,flex:1}}>
                           <input value={editingName} onChange={e=>setEditingName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(updT(team.id,{name:editingName}),setEditingTeam(null))} autoFocus style={{flex:1,padding:"2px 6px",borderRadius:5,border:`1.5px solid ${col.accent}`,fontSize:13,fontWeight:700,outline:"none"}}/>
@@ -613,14 +710,14 @@ function App(){
                     {!isCollapsed&&<>
                     {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button type="button" onClick={()=>handleMobileDrop(team.id)} className="mobile-target" title={`שבץ כאן את המדריך הנבחר — ${team.name} · Assign selected staff to this team`} style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
-                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} teamDragActive={dragInfo?.kind==="team"} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={iid=>setDragInfo({kind:"staff",id:iid,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} pilotDimmed={pilotGhost?.type==="staff"&&pilotGhost.staffId===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onStaffPilotDown={!isMobile?startStaffPilot:undefined} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
-                        <div key={`ef-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={e=>{e.preventDefault();if(dragInfo?.kind==="staff"){e.stopPropagation();moveTo(dragInfo.id,dragInfo.from,team.id);}setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♀ Open spot</span></div>
+                        <div key={`ef-${i}`} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♀ Open spot</span></div>
                       ))}
                       {(females.length>0||((team.targetF||0)-females.length)>0)&&(males.length>0||((team.targetM||0)-males.length)>0)&&<div style={{borderTop:`1.5px dashed ${col.border}66`,margin:"2px 0"}}/>}
-                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} teamDragActive={dragInfo?.kind==="team"} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={iid=>setDragInfo({kind:"staff",id:iid,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
+                      {males.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} pilotDimmed={pilotGhost?.type==="staff"&&pilotGhost.staffId===id} dimmed={hasActiveFilter&&!passesFilter(all[id])} onStaffPilotDown={!isMobile?startStaffPilot:undefined} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetM||0)-males.length)}).map((_,i)=>(
-                        <div key={`em-${i}`} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDrop={e=>{e.preventDefault();if(dragInfo?.kind==="staff"){e.stopPropagation();moveTo(dragInfo.id,dragInfo.from,team.id);}setDragOver(null);}} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♂ Open spot</span></div>
+                        <div key={`em-${i}`} style={{display:"flex",alignItems:"center",padding:"4px 7px",borderRadius:6,border:`1.5px dashed ${col.border}44`,marginBottom:1,minHeight:30,justifyContent:"center"}}><span style={{fontSize:10,color:col.border+"88",fontStyle:"italic"}}>♂ Open spot</span></div>
                       ))}
                     </div>
                     </>}
@@ -932,6 +1029,33 @@ function App(){
         </div>
       )}
 
+      {/* ══════════════ DRAG PILOT (floating preview) ══════════════ */}
+      {pilotGhost&&pilotPos&&pilotGhost.type==="team"&&(
+        <div className="no-print" style={{
+          position:"fixed",left:pilotPos.x-pilotGhost.offX,top:pilotPos.y-pilotGhost.offY,width:pilotGhost.w,minHeight:pilotGhost.h,
+          pointerEvents:"none",zIndex:10000,borderRadius:12,background:pilotGhost.col.bg,border:`2px solid ${pilotGhost.col.accent}`,
+          boxShadow:"0 18px 50px rgba(0,0,0,.25), 0 4px 14px rgba(0,0,0,.12)",transform:"scale(1.03)",
+          display:"flex",alignItems:"center",padding:"0 12px",fontWeight:800,fontSize:14,color:pilotGhost.col.accent,
+        }}>{pilotGhost.name}</div>
+      )}
+      {pilotGhost&&pilotPos&&pilotGhost.type==="staff"&&pilotGhost.c&&(()=>{
+        const pc=pilotGhost.c;
+        const gb=pilotGhost;
+        const pbg=pc.maybe?"#FFFBEB":pc.returning?"#EEF4FF":"white";
+        const pb=pc.maybe?"#FCD34D":pc.returning?"#93C5FD":"#E2D9CE";
+        const av=pc.maybe?"#F59E0B":pc.returning?"#3B82F6":(pc.gender==="F"?"#F9A8D4":"#93C5FD");
+        return(
+        <div className="no-print" key="staff-pilot" style={{
+          position:"fixed",left:pilotPos.x-gb.offX,top:pilotPos.y-gb.offY,width:gb.w,height:gb.h,
+          pointerEvents:"none",zIndex:10000,borderRadius:8,background:pbg,border:`1.5px solid ${pb}`,
+          boxShadow:"0 18px 50px rgba(0,0,0,.22), 0 4px 14px rgba(0,0,0,.1)",transform:"scale(1.02)",
+          display:"flex",alignItems:"center",gap:6,padding:"4px 8px",
+        }}>
+          <div style={{width:22,height:22,borderRadius:"50%",background:av,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"white",flexShrink:0}}>{pc.name[0]}</div>
+          <div style={{fontSize:11,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flex:1}}>{pc.name}</div>
+        </div>);
+      })()}
+
       {/* ══════════════ TOAST ══════════════ */}
       {toast&&(
         <div style={{position:"fixed",bottom:isMobile&&mobileSelected?70:20,left:"50%",transform:"translateX(-50%)",background:"#0f172a",color:"white",padding:"10px 20px",borderRadius:10,fontSize:13,fontWeight:600,boxShadow:"0 8px 30px #0004",zIndex:300,animation:"toastIn 0.3s ease",whiteSpace:"nowrap"}}>
@@ -944,15 +1068,21 @@ function App(){
 
 /* ─── StaffCard Component ───────────────────────────────────────────── */
 
-function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search,isMobile,isSelected,onMobileTap,dimmed,hideRanks,teamDragActive}){
+function StaffCard({c,from,onOpen,onRate,search,isMobile,isSelected,onMobileTap,dimmed,hideRanks,onStaffPilotDown,pilotDimmed}){
   if(!c)return null;
   const bg=isSelected?"#DBEAFE":c.maybe?"#FFFBEB":c.returning?"#EEF4FF":"white";
   const border=isSelected?"#3B82F6":c.maybe?"#FCD34D":c.returning?"#93C5FD":"#E2D9CE";
   const avatarBg=c.maybe?"#F59E0B":c.returning?"#3B82F6":(c.gender==="F"?"#F9A8D4":"#93C5FD");
   const isMatch=search&&matchesSearch(c,search);
+  const onPointerDownStaff=(e)=>{
+    if(!onStaffPilotDown)return;
+    if(e.button!==0)return;
+    if(e.target.closest("button"))return;
+    onStaffPilotDown(e,c.id,from,e.currentTarget);
+  };
   return(
-    <div draggable={!isMobile} onDragStart={()=>onDragStart(c.id)} onDragEnd={onDragEnd} onClick={onOpen} onDragOver={e=>{e.preventDefault();if(!teamDragActive)e.stopPropagation();}} onDrop={e=>{if(teamDragActive){e.preventDefault();return;}e.preventDefault();e.stopPropagation();if(onSwapDrop)onSwapDrop(c.id,from);}} className={isMatch?"search-match":""}
-      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.15s",opacity:dimmed?0.3:1}}
+    <div data-staff-row={c.id} data-staff-from={from} onPointerDown={onPointerDownStaff} onClick={isMobile&&onMobileTap?()=>onMobileTap():undefined} className={isMatch?"search-match":""}
+      style={{display:"flex",alignItems:"center",gap:5,padding:"4px 7px",borderRadius:6,background:bg,border:`1.5px solid ${border}`,cursor:isMobile?"pointer":"grab",userSelect:"none",touchAction:onStaffPilotDown?"none":"auto",boxShadow:isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001",marginBottom:1,transition:"all 0.15s, opacity 0.15s",opacity:dimmed?0.3:pilotDimmed?0.38:1}}
       onMouseEnter={e=>{if(!isMobile){e.currentTarget.style.boxShadow="0 3px 10px #0002";e.currentTarget.style.transform="translateY(-1px)";}}}
       onMouseLeave={e=>{if(!isMobile){e.currentTarget.style.boxShadow=isSelected?"0 0 0 2px #3B82F6":"0 1px 3px #0001";e.currentTarget.style.transform="none";}}}>
       <div style={{width:22,height:22,borderRadius:"50%",background:avatarBg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:800,color:"white",flexShrink:0}}>{c.name[0]}</div>
