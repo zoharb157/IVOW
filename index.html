@@ -467,11 +467,11 @@ function App(){
           <div style={{position:"relative",marginBottom:8}}>
             <input type={showPw?"text":"password"} value={pwInput} onChange={e=>{setPwInput(e.target.value);setLoginErr(null);}} placeholder="Enter password" autoFocus
               style={{width:"100%",padding:"10px 14px",paddingRight:40,borderRadius:8,border:`2px solid ${loginErr?"#DC2626":"#E5E7EB"}`,fontSize:14,outline:"none",textAlign:"center",boxSizing:"border-box"}}/>
-            <button type="button" onClick={()=>setShowPw(!showPw)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,opacity:0.5,padding:0}}>{showPw?"🙈":"👁"}</button>
+            <button type="button" onClick={()=>setShowPw(!showPw)} title={showPw?"הסתר את הסיסמה · Hide password":"הצג את הסיסמה · Show password"} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,opacity:0.5,padding:0}}>{showPw?"🙈":"👁"}</button>
           </div>
           {loginErr==="legacy"&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>The old password no longer works. Use the current password you were given.</div>}
           {loginErr==="wrong"&&<div style={{color:"#DC2626",fontSize:11,marginBottom:8}}>Incorrect password</div>}
-          <button type="submit" style={{width:"100%",padding:"10px",background:"#0f172a",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>Enter</button>
+          <button type="submit" title="כניסה לאפליקציה עם הסיסמה שהזנת · Sign in with the password you entered" style={{width:"100%",padding:"10px",background:"#0f172a",color:"white",border:"none",borderRadius:8,cursor:"pointer",fontWeight:700,fontSize:14}}>Enter</button>
         </form>
       </div>
     </div>
@@ -494,9 +494,9 @@ function App(){
             color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 11px",cursor:"pointer",
             fontSize:isMobile?11:12,fontWeight:700,whiteSpace:"nowrap",
           }}>{hideRanks?(isMobile?"👁 הצג דירוגים":"👁 הצג דירוגי מדריכים"):(isMobile?"🙈 הסתר":"🙈 הסתר דירוגי מדריכים")}</button>
-          <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{background:canUndo?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.2)",color:canUndo?"white":"rgba(255,255,255,0.3)",borderRadius:7,padding:isMobile?"4px 7px":"4px 10px",cursor:canUndo?"pointer":"default",fontSize:isMobile?14:12,fontWeight:700}}>↶</button>
-          {[["board",isMobile?"🗂":"🗂 Board"],["analytics",isMobile?"📊":"📊 Analytics"],["overview",isMobile?"📋":"📋 Overview"],["log",isMobile?"📜":"📜 Log"]].map(([t2,l])=>(
-            <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 12px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:tab===t2?700:400}}>{l}</button>
+          <button type="button" onClick={undo} disabled={!canUndo} title={canUndo?"בטל את השינוי האחרון (Ctrl+Z / Cmd+Z) · Undo last change":"אין מה לבטל · Nothing to undo"} style={{background:canUndo?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.2)",color:canUndo?"white":"rgba(255,255,255,0.3)",borderRadius:7,padding:isMobile?"4px 7px":"4px 10px",cursor:canUndo?"pointer":"default",fontSize:isMobile?14:12,fontWeight:700}}>↶</button>
+          {[["board",isMobile?"🗂":"🗂 Board","לוח שיבוצים — גרירת מדריכים בין צוותים לבריכה · Assignment board: drag staff between teams and pool"],["analytics",isMobile?"📊":"📊 Analytics","סטטיסטיקות ודירוגים לפי צוות · Per-team stats and rank breakdown"],["overview",isMobile?"📋":"📋 Overview","טבלת כל המדריכים, מיון, ייצוא והדפסה · Full table, sort, export, print"],["log",isMobile?"📜":"📜 Log","יומן פעולות אחרונות · Recent activity log"]].map(([t2,l,tip])=>(
+            <button type="button" key={t2} onClick={()=>setTab(t2)} title={tip} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 12px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:tab===t2?700:400}}>{l}</button>
           ))}
         </div>
       </div>
@@ -530,32 +530,32 @@ function App(){
         <div style={{display:"flex",flexDirection:isMobile?"column":"row",height:isMobile?"auto":"calc(100vh - 80px)"}}>
           {isMobile&&(
             <div style={{padding:"6px 10px",background:"#FAF7F3",borderBottom:"1px solid #DDD5CC",display:"flex",gap:6,alignItems:"center"}}>
-              <button onClick={()=>setShowPool(!showPool)} style={{background:"#0f172a",color:"white",border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>{showPool?"Hide Pool":"Show Pool"} ({filteredPool.length})</button>
-              <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Add</button>
+              <button type="button" onClick={()=>setShowPool(!showPool)} title={showPool?"הסתר את עמודת הבריכה · Hide pool column":"הצג את עמודת הבריכה (מדריכים ללא שיבוץ) · Show unassigned pool"} style={{background:"#0f172a",color:"white",border:"none",borderRadius:6,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:700}}>{showPool?"Hide Pool":"Show Pool"} ({filteredPool.length})</button>
+              <button type="button" onClick={()=>setShowAddForm(true)} title="פתח טופס להוספת מדריך חדש · Open form to add a new staff member" style={{background:"#16A34A",color:"white",border:"none",borderRadius:6,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:700}}>+ Add</button>
             </div>
           )}
           {(!isMobile||showPool)&&(
           <div style={{width:isMobile?"100%":250,maxHeight:isMobile?300:"none",background:"#FAF7F3",borderRight:isMobile?"none":"1px solid #DDD5CC",borderBottom:isMobile?"1px solid #DDD5CC":"none",display:"flex",flexDirection:"column",flexShrink:0}}>
             <div style={{padding:"8px 8px 5px",borderBottom:"1px solid #E5DDD4"}}>
-              <input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search... ( / )" style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
+              <input ref={searchRef} value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Search... ( / )" title="חיפוש מדריכים בשם, עיר או ניסיון · מקש / למיקוד · Search staff; press / to focus" style={{width:"100%",padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none"}}/>
               <div style={{display:"flex",gap:4,marginTop:4}}>
-                {["all","F","M"].map(g=>(<button key={g} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>{g==="all"?"All":g==="F"?"♀":"♂"}</button>))}
+                {[["all","All","סנן בריכה: כל המגדרים · Pool: all genders"],["F","♀","סנן בריכה: נקבות בלבד · Pool: females only"],["M","♂","סנן בריכה: זכרים בלבד · Pool: males only"]].map(([g,lab,tip])=>(<button key={g} type="button" title={tip} onClick={()=>setFilterGender(g)} style={{flex:1,padding:"3px 0",borderRadius:5,border:"1px solid #D2CAC0",background:filterGender===g?"#0f172a":"white",color:filterGender===g?"white":"#666",cursor:"pointer",fontSize:11,fontWeight:filterGender===g?700:400}}>{lab}</button>))}
               </div>
-              {!hideRanks&&<div title="Pool filter by rank: 1=best, 3=weakest" style={{display:"flex",gap:3,marginTop:3}}>
-                {[["all","All"],[1,"1"],[2,"2"],[3,"3"]].map(([r,l])=>(<button key={r} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
+              {!hideRanks&&<div style={{display:"flex",gap:3,marginTop:3}}>
+                {[["all","All","סנן בריכה לפי דירוג — הכל · Pool filter: all ranks"],[1,"1","סנן בריכה: דירוג 1 (החזקים) · Rank 1 (strongest)"],[2,"2","סנן בריכה: דירוג 2 · Rank 2"],[3,"3","סנן בריכה: דירוג 3 (חלשים יותר) · Rank 3"]].map(([r,l,tip])=>(<button key={r} type="button" title={tip} onClick={()=>setFilterRating(r)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterRating===r?(r==="all"?"#0f172a":RATING_C[r]):"white",color:filterRating===r?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterRating===r?700:400}}>{l}</button>))}
               </div>}
               <div style={{display:"flex",gap:3,marginTop:3}}>
-                {[["all","All"],["returning","↩"],["shabbat","🕎"],["new","New"]].map(([s,l])=>(<button key={s} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
+                {[["all","All","סנן בריכה — כל הסטטוסים · All statuses"],["returning","↩","מחזירים משנה שעברה · Returning staff"],["shabbat","🕎","מדריכי שבת · Shabbat-observant"],["new","New","חדשים (לא מחזירים) · New (non-returning)"]].map(([s,l,tip])=>(<button key={s} type="button" title={tip} onClick={()=>setFilterStatus(s)} style={{flex:1,padding:"2px 0",borderRadius:4,border:"1px solid #D2CAC0",background:filterStatus===s?"#0f172a":"white",color:filterStatus===s?"white":"#666",cursor:"pointer",fontSize:10,fontWeight:filterStatus===s?700:400}}>{l}</button>))}
               </div>
-              {hasActiveFilter&&<button onClick={()=>{setFilterGender("all");setFilterRating("all");setFilterStatus("all");setSearch("");}} style={{marginTop:3,width:"100%",padding:"3px 0",borderRadius:4,border:"1px dashed #D2CAC0",background:"transparent",color:"#999",cursor:"pointer",fontSize:10}}>✕ Clear filters</button>}
+              {hasActiveFilter&&<button type="button" onClick={()=>{setFilterGender("all");setFilterRating("all");setFilterStatus("all");setSearch("");}} title="אפס את כל הסינונים ושדה החיפוש · Reset all pool filters and search" style={{marginTop:3,width:"100%",padding:"3px 0",borderRadius:4,border:"1px dashed #D2CAC0",background:"transparent",color:"#999",cursor:"pointer",fontSize:10}}>✕ Clear filters</button>}
             </div>
             {!isMobile&&<div style={{padding:"4px 8px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:10,fontWeight:700,color:"#999"}}>POOL ({filteredPool.length})</span>
-              <button onClick={()=>setShowAddForm(true)} style={{background:"#16A34A",color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700}}>+ Add Staff</button>
+              <button type="button" onClick={()=>setShowAddForm(true)} title="הוסף מדריך חדש לבריכה · Add new staff to the pool" style={{background:"#16A34A",color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:700}}>+ Add Staff</button>
             </div>}
             <div onDragOver={e=>{e.preventDefault();setDragOver("pool");}} onDragLeave={()=>setDragOver(null)} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,"pool");setDragOver(null);}}
               style={{flex:1,overflowY:"auto",padding:"3px 6px 12px",background:dragOver==="pool"?"#EEF6FF":"transparent"}}>
-              {mobileSelected&&isMobile&&(<button onClick={()=>handleMobileDrop("pool")} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:4,background:"#DBEAFE",border:"2px dashed #3B82F6",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:"#1D4ED8"}}>📥 Drop to Pool</button>)}
+              {mobileSelected&&isMobile&&(<button type="button" onClick={()=>handleMobileDrop("pool")} className="mobile-target" title="שחרר את המדריך הנבחר לבריכה (ללא צוות) · Place selected staff in the unassigned pool" style={{width:"100%",padding:"8px",marginBottom:4,background:"#DBEAFE",border:"2px dashed #3B82F6",borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:"#1D4ED8"}}>📥 Drop to Pool</button>)}
               {filteredPool.length===0&&!mobileSelected&&<div style={{textAlign:"center",color:"#CCC",fontSize:12,padding:20}}>✅ Pool is empty</div>}
               {filteredPool.map(id=>(<StaffCard key={id} c={all[id]} from="pool" search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} onDragStart={id=>setDragInfo({id,from:"pool"})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id].rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,"pool")}/>))}
             </div>
@@ -575,11 +575,11 @@ function App(){
                   <div key={team.id} onDragOver={e=>{e.preventDefault();setDragOver(team.id);}} onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget))setDragOver(null);}} onDrop={()=>{if(dragInfo)moveTo(dragInfo.id,dragInfo.from,team.id);setDragOver(null);}}
                     style={{background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"all 0.12s"}}>
                     <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:isCollapsed?0:6}}>
-                      <button onClick={()=>toggleCollapse(team.id)} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,opacity:0.4,padding:0}}>{isCollapsed?"▶":"▼"}</button>
+                      <button type="button" onClick={()=>toggleCollapse(team.id)} title={isCollapsed?"הרחב את רשימת המדריכים בקבוצה · Expand team member list":"כווץ את רשימת המדריכים (רק כותרת) · Collapse to header only"} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,opacity:0.4,padding:0}}>{isCollapsed?"▶":"▼"}</button>
                       {editingTeam===team.id
                         ?<div style={{display:"flex",gap:4,flex:1}}>
                           <input value={editingName} onChange={e=>setEditingName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(updT(team.id,{name:editingName}),setEditingTeam(null))} autoFocus style={{flex:1,padding:"2px 6px",borderRadius:5,border:`1.5px solid ${col.accent}`,fontSize:13,fontWeight:700,outline:"none"}}/>
-                          <button onClick={()=>{updT(team.id,{name:editingName});setEditingTeam(null);}} style={{background:col.accent,color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontWeight:700}}>✓</button>
+                          <button type="button" onClick={()=>{updT(team.id,{name:editingName});setEditingTeam(null);}} title="שמור את שם הקבוצה · Save team name" style={{background:col.accent,color:"white",border:"none",borderRadius:5,padding:"2px 8px",cursor:"pointer",fontWeight:700}}>✓</button>
                         </div>
                         :<>
                           <span style={{fontSize:14,fontWeight:800,color:col.accent}}>{team.name}</span>
@@ -588,12 +588,12 @@ function App(){
                           {!hideRanks&&s.avg&&<span title="Team rank average — 1=best counselor, lower number = stronger team" style={{background:RATING_C[Math.round(+s.avg)],color:"white",borderRadius:20,padding:"0 7px",fontSize:10.5,fontWeight:700}}>avg {s.avg}</span>}
                           <span style={{fontSize:10,background:col.light,color:col.accent,borderRadius:20,padding:"0 6px"}}>♀{s.f}{s.overF?<span style={{color:"#DC2626"}}>!</span>:""} ♂{s.m}{s.overM?<span style={{color:"#DC2626"}}>!</span>:""}</span>
                           {s.maybe>0&&<span style={{fontSize:10,background:"#FEF9C3",color:"#854D0E",borderRadius:20,padding:"0 5px"}}>⏳{s.maybe}</span>}
-                          <button onClick={()=>{setEditingTeam(team.id);setEditingName(team.name);}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.3,fontSize:11}}>✏️</button>
+                          <button type="button" onClick={()=>{setEditingTeam(team.id);setEditingName(team.name);}} title="ערוך את שם הקבוצה · Edit team display name" style={{background:"none",border:"none",cursor:"pointer",opacity:0.3,fontSize:11}}>✏️</button>
                         </>
                       }
                     </div>
                     {!isCollapsed&&<>
-                    {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button onClick={()=>handleMobileDrop(team.id)} className="mobile-target" style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
+                    {mobileSelected&&isMobile&&mobileSelected.from!==team.id&&(<button type="button" onClick={()=>handleMobileDrop(team.id)} className="mobile-target" title={`שבץ כאן את המדריך הנבחר — ${team.name} · Assign selected staff to this team`} style={{width:"100%",padding:"8px",marginBottom:6,background:col.light,border:`2px dashed ${col.accent}`,borderRadius:8,cursor:"pointer",fontSize:12,fontWeight:700,color:col.accent}}>📥 Place here</button>)}
                     <div style={{display:"flex",flexDirection:"column",gap:2,minHeight:28}}>
                       {females.map(id=><StaffCard key={id} c={all[id]} from={team.id} search={search} isMobile={isMobile} isSelected={mobileSelected?.id===id} hideRanks={hideRanks} dimmed={hasActiveFilter&&!passesFilter(all[id])} onDragStart={id=>setDragInfo({id,from:team.id})} onDragEnd={()=>{setDragInfo(null);setDragOver(null);}} onOpen={()=>setOpenCard(id)} onRate={r=>updC(id,{rating:all[id]?.rating===r?null:r})} onSwapDrop={(tid,tf)=>handleSwapDrop(tid,tf)} onMobileTap={()=>handleMobileTap(id,team.id)}/>)}
                       {Array.from({length:Math.max(0,(team.targetF||0)-females.length)}).map((_,i)=>(
@@ -688,17 +688,17 @@ function App(){
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:8}}>
             <span style={{fontSize:15,fontWeight:800}}>📋 Full Overview ({sortedRows.length})</span>
             <div className="no-print" style={{display:"flex",gap:6,alignItems:"center"}}>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Filter..." style={{padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none",width:160}}/>
-              <button onClick={exportExcel} style={{background:"#16A34A",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📊 Excel</button>
-              <button onClick={exportCSV} style={{background:"#0f172a",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📥 CSV</button>
-              <button onClick={()=>window.print()} style={{background:"#6B7280",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>🖨</button>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Filter..." title="סנן את הטבלה לפי שם, עיר או ניסיון · Filter table rows" style={{padding:"5px 9px",borderRadius:7,border:"1px solid #D2CAC0",fontSize:12,background:"white",outline:"none",width:160}}/>
+              <button type="button" onClick={exportExcel} title="הורד את כל המדריכים כקובץ Excel (כולל פרטים ודירוג) · Download full roster as Excel" style={{background:"#16A34A",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📊 Excel</button>
+              <button type="button" onClick={exportCSV} title="הורד כ-CSV לייבוא לגיליונות אחרים · Download CSV for spreadsheets" style={{background:"#0f172a",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>📥 CSV</button>
+              <button type="button" onClick={()=>window.print()} title="הדפס את הסקירה (הסתרת סרגלים מסומנת ב-CSS) · Print overview" style={{background:"#6B7280",color:"white",border:"none",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>🖨</button>
             </div>
           </div>
           <div style={{overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",background:"white",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 10px #0001"}}>
               <thead><tr style={{background:"#0f172a",color:"white"}}>
-                {[["name","Counselor"],["gender","Gender"],["age","Age"],["exp","Experience"],["team","Team"],["rating","Rank (1=best)"],["status","Status"]].filter(([k])=>!hideRanks||k!=="rating").map(([k,h])=>(
-                  <th key={k} className="sortable-th" onClick={()=>k!=="exp"&&toggleSort(k)} style={{padding:"8px 11px",textAlign:"left",fontSize:11,fontWeight:700,cursor:k==="exp"?"default":"pointer"}}>{h}{k!=="exp"&&sortArrow(k)}</th>
+                {[["name","Counselor","מיין לפי שם · Sort by name"],["gender","Gender","מיין לפי מגדר · Sort by gender"],["age","Age","מיין לפי גיל · Sort by age"],["exp","Experience","עמודת ניסיון (ללא מיון) · Experience (not sortable)"],["team","Team","מיין לפי צוות · Sort by team"],["rating","Rank (1=best)","מיין לפי דירוג (1=חזק) · Sort by rank"],["status","Status","מיין לפי סטטוס · Sort by status"]].filter(([k])=>!hideRanks||k!=="rating").map(([k,h,tip])=>(
+                  <th key={k} className="sortable-th" onClick={()=>k!=="exp"&&toggleSort(k)} title={tip} style={{padding:"8px 11px",textAlign:"left",fontSize:11,fontWeight:700,cursor:k==="exp"?"default":"pointer"}}>{h}{k!=="exp"&&sortArrow(k)}</th>
                 ))}
               </tr></thead>
               <tbody>
@@ -757,7 +757,7 @@ function App(){
           <div onClick={e=>e.stopPropagation()} style={{background:"white",borderRadius:14,padding:22,width:460,maxWidth:"95vw",maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px #0005"}}>
             <div style={{display:"flex",justifyContent:"space-between",marginBottom:14}}>
               <span style={{fontSize:17,fontWeight:800}}>+ Add New Staff</span>
-              <button onClick={()=>setShowAddForm(false)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+              <button type="button" onClick={()=>setShowAddForm(false)} title="סגור בלי להוסיף · Close without adding" style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
             </div>
             <form onSubmit={e=>{e.preventDefault();const f=new FormData(e.target);addStaff({name:f.get("name"),gender:f.get("gender"),dob:f.get("dob"),city:f.get("city"),phone:f.get("phone"),email:f.get("email"),address:f.get("address"),exp:f.get("exp")});}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
@@ -770,7 +770,7 @@ function App(){
               </div>
               <div style={{marginBottom:8}}><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Address</label><input name="address" placeholder="Full address" style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box"}}/></div>
               <div style={{marginBottom:12}}><label style={{fontSize:10.5,fontWeight:700,color:"#555",display:"block",marginBottom:2}}>Experience</label><textarea name="exp" placeholder="Previous experience..." rows={2} style={{width:"100%",padding:"6px 8px",borderRadius:6,border:"1.5px solid #E5E7EB",fontSize:12,boxSizing:"border-box",resize:"none"}}/></div>
-              <button type="submit" style={{width:"100%",padding:"9px 0",background:"#16A34A",color:"white",border:"none",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:13}}>Add Staff Member</button>
+              <button type="submit" title="שמור מדריך חדש ושבץ אותו לבריכה · Save new staff to the pool" style={{width:"100%",padding:"9px 0",background:"#16A34A",color:"white",border:"none",borderRadius:7,cursor:"pointer",fontWeight:800,fontSize:13}}>Add Staff Member</button>
             </form>
           </div>
         </div>
@@ -794,8 +794,8 @@ function App(){
                   {c.note&&<div style={{marginTop:4,background:"#EEF4FF",border:"1px solid #93C5FD",borderRadius:5,padding:"3px 8px",fontSize:10.5,color:"#1E40AF"}}>🔗 {c.note}</div>}
                 </div>
                 <div style={{display:"flex",gap:4}}>
-                  <button onClick={()=>setConfirmDelete(openCard)} style={{background:"#FEE2E2",border:"1px solid #FCA5A5",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,color:"#DC2626",fontWeight:700}}>🗑</button>
-                  <button onClick={()=>setOpenCard(null)} style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
+                  <button type="button" onClick={()=>setConfirmDelete(openCard)} title="מחק מדריך מהמערכת (יופיע אישור) · Delete staff (asks for confirmation)" style={{background:"#FEE2E2",border:"1px solid #FCA5A5",borderRadius:6,padding:"4px 8px",cursor:"pointer",fontSize:11,color:"#DC2626",fontWeight:700}}>🗑</button>
+                  <button type="button" onClick={()=>setOpenCard(null)} title="סגור את כרטיס הפרטים · Close detail card" style={{background:"#F3F4F6",border:"none",borderRadius:6,padding:"4px 10px",cursor:"pointer",fontSize:12}}>✕</button>
                 </div>
               </div>
 
@@ -805,7 +805,7 @@ function App(){
                 return(
                   <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:11,background:"#EEF4FF",borderRadius:8,padding:"8px 10px",border:"1px solid #BFDBFE"}}>
                     <span style={{fontSize:11,fontWeight:700,color:"#1E40AF",whiteSpace:"nowrap"}}>📍 {curName}</span>
-                    <select value={curTeam} onChange={e=>{moveTo(openCard,curTeam,e.target.value);}} style={{flex:1,padding:"5px 8px",borderRadius:6,border:"1.5px solid #93C5FD",fontSize:12,fontWeight:600,background:"white",cursor:"pointer",outline:"none"}}>
+                    <select value={curTeam} title="העבר את המדריך לצוות אחר או לבריכה · Move staff to another team or pool" onChange={e=>{moveTo(openCard,curTeam,e.target.value);}} style={{flex:1,padding:"5px 8px",borderRadius:6,border:"1.5px solid #93C5FD",fontSize:12,fontWeight:600,background:"white",cursor:"pointer",outline:"none"}}>
                       <option value="pool">Pool</option>
                       {teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
@@ -846,7 +846,7 @@ function App(){
                 <div style={{fontSize:10.5,fontWeight:700,color:"#555",marginBottom:2}}>Counselor rank</div>
                 <div style={{fontSize:9,color:"#888",marginBottom:4}}>1 = best · 3 = weakest (not a star rating)</div>
                 <div style={{display:"flex",gap:5}}>
-                  {[1,2,3].map(r=>(<button key={r} onClick={()=>updC(openCard,{rating:c.rating===r?null:r})} style={{flex:1,padding:"7px 0",borderRadius:6,border:`2px solid ${c.rating===r?RATING_C[r]:"#E5E7EB"}`,background:c.rating===r?RATING_C[r]:"white",color:c.rating===r?"white":"#555",cursor:"pointer",fontWeight:700,fontSize:12}}>{r} — {RATING_L[r]}</button>))}
+                  {[1,2,3].map(r=>(<button key={r} type="button" onClick={()=>updC(openCard,{rating:c.rating===r?null:r})} title={r===1?"דירוג 1 — החזק ביותר · Strongest rank":r===2?"דירוג 2 — בינוני · Middle rank":"דירוג 3 — חלש יותר · Weaker rank; לחיצה חוזרת מבטלת · Tap again to clear"} style={{flex:1,padding:"7px 0",borderRadius:6,border:`2px solid ${c.rating===r?RATING_C[r]:"#E5E7EB"}`,background:c.rating===r?RATING_C[r]:"white",color:c.rating===r?"white":"#555",cursor:"pointer",fontWeight:700,fontSize:12}}>{r} — {RATING_L[r]}</button>))}
                 </div>
               </div>}
 
@@ -884,8 +884,8 @@ function App(){
                     <div style={{fontSize:16,fontWeight:700,color:"#DC2626",marginBottom:6}}>Delete {c.name}?</div>
                     <div style={{fontSize:12,color:"#777",marginBottom:16}}>This will permanently remove them from all teams.</div>
                     <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-                      <button onClick={()=>setConfirmDelete(null)} style={{padding:"8px 24px",borderRadius:8,border:"1px solid #DDD",background:"white",cursor:"pointer",fontSize:13,fontWeight:600}}>Cancel</button>
-                      <button onClick={()=>deleteStaff(openCard)} style={{padding:"8px 24px",borderRadius:8,border:"none",background:"#DC2626",color:"white",cursor:"pointer",fontSize:13,fontWeight:700}}>Yes, Delete</button>
+                      <button type="button" onClick={()=>setConfirmDelete(null)} title="בטל מחיקה · Cancel delete" style={{padding:"8px 24px",borderRadius:8,border:"1px solid #DDD",background:"white",cursor:"pointer",fontSize:13,fontWeight:600}}>Cancel</button>
+                      <button type="button" onClick={()=>deleteStaff(openCard)} title="מחק לצמיתות מכל הצוותים · Permanently remove from all teams" style={{padding:"8px 24px",borderRadius:8,border:"none",background:"#DC2626",color:"white",cursor:"pointer",fontSize:13,fontWeight:700}}>Yes, Delete</button>
                     </div>
                   </div>
                 </div>
@@ -903,7 +903,7 @@ function App(){
             <div style={{fontSize:13,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Moving: {all[mobileSelected.id]?.name}</div>
             <div style={{fontSize:10,opacity:0.7}}>Tap a team or pool to place</div>
           </div>
-          <button onClick={()=>setMobileSelected(null)} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>Cancel</button>
+          <button type="button" onClick={()=>setMobileSelected(null)} title="בטל העברה — המדריך נשאר במקום · Cancel move; staff stays put" style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"white",borderRadius:7,padding:"6px 14px",cursor:"pointer",fontSize:12,fontWeight:700}}>Cancel</button>
         </div>
       )}
 
@@ -941,10 +941,10 @@ function StaffCard({c,from,onDragStart,onDragEnd,onOpen,onRate,onSwapDrop,search
         <div style={{fontSize:8.5,color:"#AAA"}}>{c.dob?`${getAge(c.dob)} · `:""}{c.gender==="F"?"♀":"♂"}{c.returning?" · ↩":""}{c.city?` · ${c.city}`:""}</div>
         {c.exp&&<div style={{fontSize:7.5,color:"#C4B5A4",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:140}}>{c.exp}</div>}
       </div>
-      {!hideRanks&&<div title="Rank: 1=best, 3=weakest" style={{display:"flex",gap:2,flexShrink:0}}>
-        {[1,2,3].map(r=>(<button key={r} onClick={e=>{e.stopPropagation();onRate(r);}} style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>))}
+      {!hideRanks&&<div style={{display:"flex",gap:2,flexShrink:0}}>
+        {[1,2,3].map(r=>(<button key={r} type="button" onClick={e=>{e.stopPropagation();onRate(r);}} title={r===1?"דירוג 1 (החזק) · לחיצה חוזרת מבטלת · Rank 1, tap again to clear":r===2?"דירוג 2 · Rank 2":"דירוג 3 (חלש יותר) · Rank 3"} style={{width:15,height:15,borderRadius:3,border:"none",background:c.rating===r?RATING_C[r]:"#EDEDED",color:c.rating===r?"white":"#888",cursor:"pointer",fontSize:8.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>{r}</button>))}
       </div>}
-      <button onClick={e=>{e.stopPropagation();onOpen();}} style={{background:"none",border:"none",cursor:"pointer",opacity:0.35,fontSize:10,padding:"0 1px"}}>✎</button>
+      <button type="button" onClick={e=>{e.stopPropagation();onOpen();}} title="פתח כרטיס מלא לעריכת פרטים · Open full detail card" style={{background:"none",border:"none",cursor:"pointer",opacity:0.35,fontSize:10,padding:"0 1px"}}>✎</button>
     </div>
   );
 }
