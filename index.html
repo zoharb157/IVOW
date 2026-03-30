@@ -101,31 +101,37 @@ const STAFF_INIT={
 };
 
 const TEAMS_INIT=[
-  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],targetF:3,targetM:3},
-  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],targetF:2,targetM:2},
-  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],targetF:3,targetM:3},
-  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],targetF:2,targetM:2},
-  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],targetF:1,targetM:1},
-  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],targetF:1,targetM:1},
-  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],targetF:1,targetM:2},
-  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],targetF:2,targetM:1},
+  {id:"CBB-IVOW",name:"CBB — IVOW",members:["yael-f","hania","tehila","yaar","eilon","gal"],targetF:3,targetM:3,boardColumn:"left"},
+  {id:"CBB-SIT",name:"CBB — SIT",members:["tomer","shila","lior","daniela"],targetF:2,targetM:2,boardColumn:"right"},
+  {id:"YCC-IVOW",name:"YCC — IVOW",members:["ofek","adar","gili","itai","dvir","ziv"],targetF:3,targetM:3,boardColumn:"left"},
+  {id:"YCC-SIT",name:"YCC — SIT",members:["kobi","maya","bar"],targetF:2,targetM:2,boardColumn:"right"},
+  {id:"MASAD-IVOW",name:"MASAD — IVOW",members:["hadar","sagiv"],targetF:1,targetM:1,boardColumn:"left"},
+  {id:"MASAD-SIT",name:"MASAD — SIT",members:["asaf"],targetF:1,targetM:1,boardColumn:"right"},
+  {id:"WINGATE",name:"WINGATE",members:["nitzan","shani","ofer"],targetF:1,targetM:2,boardColumn:"left"},
+  {id:"OTTAWA",name:"OTTAWA",members:["gaya","shahar","neta","sahar"],targetF:2,targetM:1,boardColumn:"right"},
 ];
 
 /* ─── State Migration ───────────────────────────────────────────────── */
 
 function migrateState(state){
+  const tn=state.teams?.length||0;
+  const legacySplit=typeof state.boardColumnSplit==="number"&&Number.isFinite(state.boardColumnSplit)&&tn>1
+    ?Math.max(1,Math.min(tn-1,Math.round(state.boardColumnSplit)))
+    :null;
   if(state.teams){
-    state.teams=state.teams.map(t=>{
+    state.teams=state.teams.map((t,i)=>{
       const def=TARGET_DEFAULTS[t.id]||{targetF:3,targetM:3};
       const {teamStrengths:_ts,teamWeaknesses:_tw,...rest}=t;
-      return{...rest,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM};
+      let boardColumn=t.boardColumn;
+      if(boardColumn!=="left"&&boardColumn!=="right"){
+        if(legacySplit!=null)boardColumn=i<legacySplit?"left":"right";
+        else boardColumn=i%2===0?"left":"right";
+      }
+      return{...rest,targetF:t.targetF??def.targetF,targetM:t.targetM??def.targetM,boardColumn};
     });
   }
   if(!state.activityLog)state.activityLog=[];
-  const tn=state.teams?.length||0;
-  if(typeof state.boardColumnSplit!=="number"||!Number.isFinite(state.boardColumnSplit)){
-    state.boardColumnSplit=tn>1?Math.ceil(tn/2):1;
-  }
+  delete state.boardColumnSplit;
   return state;
 }
 
@@ -161,9 +167,6 @@ function App(){
   const [filterRating,setFilterRating]=useState("all");
   const [filterStatus,setFilterStatus]=useState("all");
   const [hideRanks,setHideRanks]=useState(()=>localStorage.getItem("ivow_hide_ranks")==="1");
-  const initTeamCount=TEAMS_INIT.length;
-  const [boardColumnSplit,setBoardColumnSplit]=useState(()=>initTeamCount>1?Math.ceil(initTeamCount/2):1);
-  const boardSplitRef=useRef(boardColumnSplit);
   const wsRef=useRef(null);
   const logRef=useRef([]);
   const undoStack=useRef([]);
@@ -178,12 +181,6 @@ function App(){
   useEffect(()=>{allRef.current=all;},[all]);
   useEffect(()=>{teamsRef.current=teams;},[teams]);
   useEffect(()=>{poolRef.current=pool;},[pool]);
-  useEffect(()=>{boardSplitRef.current=boardColumnSplit;},[boardColumnSplit]);
-  useEffect(()=>{
-    const n=teams.length;
-    if(n<2)return;
-    setBoardColumnSplit(s=>{const c=Math.max(1,Math.min(n-1,s));boardSplitRef.current=c;return c;});
-  },[teams.length]);
   useEffect(()=>{localStorage.setItem("ivow_hide_ranks",hideRanks?"1":"0");},[hideRanks]);
   useEffect(()=>{if(hideRanks)setFilterRating("all");},[hideRanks]);
   useEffect(()=>{if(hideRanks&&sortCol==="rating"){setSortCol(null);setSortDir("asc");}},[hideRanks,sortCol]);
@@ -272,12 +269,6 @@ function App(){
             }
             if(s.pool!=null)setPool(s.pool);
             if(s.activityLog){logRef.current=s.activityLog;setActivityLog(s.activityLog);}
-            if(typeof s.boardColumnSplit==="number"&&s.teams?.length>1){
-              const n=s.teams.length;
-              const c=Math.max(1,Math.min(n-1,Math.round(s.boardColumnSplit)));
-              boardSplitRef.current=c;
-              setBoardColumnSplit(c);
-            }
             setLastSync(new Date().toLocaleTimeString());
             if(!initialLoadRef.current) showToast("Board updated by another user");
             initialLoadRef.current=false;
@@ -295,20 +286,7 @@ function App(){
 
   const push=(newAll,newTeams,newPool)=>{
     if(wsRef.current?.readyState===1){
-      wsRef.current.send(JSON.stringify({type:"update",payload:{all:newAll,teams:newTeams,pool:newPool,activityLog:logRef.current,boardColumnSplit:boardSplitRef.current}}));
-      setSyncStatus("live");
-      setLastSync(new Date().toLocaleTimeString());
-    }
-  };
-
-  const applyBoardSplit=(next)=>{
-    const n=teams.length;
-    if(n<2)return;
-    const c=Math.max(1,Math.min(n-1,next));
-    boardSplitRef.current=c;
-    setBoardColumnSplit(c);
-    if(wsRef.current?.readyState===1){
-      wsRef.current.send(JSON.stringify({type:"update",payload:{all,teams,pool,activityLog:logRef.current,boardColumnSplit:c}}));
+      wsRef.current.send(JSON.stringify({type:"update",payload:{all:newAll,teams:newTeams,pool:newPool,activityLog:logRef.current}}));
       setSyncStatus("live");
       setLastSync(new Date().toLocaleTimeString());
     }
@@ -348,12 +326,38 @@ function App(){
     const i=arr.findIndex(t=>t.id===draggedTeamId);
     const j=arr.findIndex(t=>t.id===targetTeamId);
     if(i<0||j<0)return;
+    const tgt=arr[j];
+    const col=tgt.boardColumn==="right"?"right":"left";
     const nm=arr[i].name;
-    const tNm=arr[j].name;
+    const tNm=tgt.name;
     const [row]=arr.splice(i,1);
+    const row2={...row,boardColumn:col};
     const j2=arr.findIndex(t=>t.id===targetTeamId);
-    arr.splice(j2,0,row);
-    addLog("Reorder teams",`${nm} → before ${tNm}`);
+    arr.splice(j2,0,row2);
+    addLog("Reorder teams",`${nm} → לפני ${tNm} (${col})`);
+    setTeams(arr);push(all,arr,pool);
+    setDragOver(null);
+  };
+
+  const placeTeamInColumn=(teamId,col)=>{
+    const isLeft=t=>(t.boardColumn||"left")!=="right";
+    snapshot();
+    const arr=[...teamsRef.current];
+    const i=arr.findIndex(t=>t.id===teamId);
+    if(i<0)return;
+    const [row]=arr.splice(i,1);
+    const row2={...row,boardColumn:col};
+    if(col==="left"){
+      let lastL=-1;
+      for(let k=0;k<arr.length;k++)if(isLeft(arr[k]))lastL=k;
+      arr.splice(lastL+1,0,row2);
+    }else{
+      let lastR=-1;
+      for(let k=0;k<arr.length;k++)if(arr[k].boardColumn==="right")lastR=k;
+      if(lastR<0)arr.push(row2);
+      else arr.splice(lastR+1,0,row2);
+    }
+    addLog("Reorder teams",`${row2.name} → עמודה ${col==="left"?"שמאל":"ימין"}`);
     setTeams(arr);push(all,arr,pool);
     setDragOver(null);
   };
@@ -377,6 +381,17 @@ function App(){
   };
   const isOverPoolZone=(x,y)=>document.elementsFromPoint(x,y).some(el=>el.closest?.("[data-drop-zone=pool]"));
 
+  const findBoardColumnUnderPoint=(x,y)=>{
+    for(const el of document.elementsFromPoint(x,y)){
+      const z=el.closest?.("[data-board-column]");
+      if(z){
+        const v=z.getAttribute("data-board-column");
+        if(v==="left"||v==="right")return v;
+      }
+    }
+    return null;
+  };
+
   const endPilotSessionFixed=(e)=>{
     const clientX=e.clientX;
     const clientY=e.clientY;
@@ -390,7 +405,9 @@ function App(){
     if(!sess)return;
     if(sess.type==="team"){
       const tid=findTeamIdUnderPoint(clientX,clientY,sess.teamId);
-      if(tid)reorderTeams(sess.teamId,tid);
+      if(tid){reorderTeams(sess.teamId,tid);return;}
+      const col=findBoardColumnUnderPoint(clientX,clientY);
+      if(col==="left"||col==="right")placeTeamInColumn(sess.teamId,col);
       return;
     }
     if(sess.type==="staff"){
@@ -707,11 +724,10 @@ function App(){
           )}
           <div style={{flex:1,overflowY:"auto",padding:isMobile?"8px 8px 20px":"10px 14px 20px"}}>
             {(()=>{
-              const colStack={flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4};
-              const tc=teams.length;
-              const effectiveSplit=tc<2?tc:Math.max(1,Math.min(tc-1,boardColumnSplit));
-              const leftColTeams=teams.slice(0,effectiveSplit);
-              const rightColTeams=teams.slice(effectiveSplit);
+              const colStackBase={flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:4,alignSelf:"stretch"};
+              const teamIsLeft=t=>(t.boardColumn||"left")!=="right";
+              const leftColTeams=teams.filter(teamIsLeft);
+              const rightColTeams=teams.filter(t=>t.boardColumn==="right");
               const renderTeam=(team)=>{
                 const col=getTeamColor(team.id);
                 const s=tStats(team);
@@ -726,7 +742,7 @@ function App(){
                     style={{width:"100%",background:isOver?col.light:col.bg,border:`2px solid ${isOver?col.accent:col.border}`,borderRadius:12,padding:10,transition:"border-color 0.12s, box-shadow 0.12s, background 0.12s, opacity 0.15s",opacity:cardLifted?0.38:1}}>
                     <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap",marginBottom:isCollapsed?0:6}}>
                       <button type="button" onClick={()=>toggleCollapse(team.id)} title={isCollapsed?"הרחב את רשימת המדריכים בקבוצה · Expand team member list":"כווץ את רשימת המדריכים (רק כותרת) · Collapse to header only"} style={{background:"none",border:"none",cursor:"pointer",fontSize:10,opacity:0.4,padding:0}}>{isCollapsed?"▶":"▼"}</button>
-                      <span role="presentation" title="גרור — התצוגה נדבקת לאצבע/לעכבר כמו באייפון · Drag; preview follows your finger/cursor" onPointerDown={e=>startTeamPilot(e,team)} style={{cursor:"grab",touchAction:"none",userSelect:"none",fontSize:12,color:col.accent,opacity:0.55,lineHeight:1,padding:"4px 6px"}}>⠿</span>
+                      <span role="presentation" title="גרור לעמודה השנייה או על צוות אחר — הצוות נשאר בעמודה ששחררת בה · Drag to other column or onto another team; the team stays on that side" onPointerDown={e=>startTeamPilot(e,team)} style={{cursor:"grab",touchAction:"none",userSelect:"none",fontSize:12,color:col.accent,opacity:0.55,lineHeight:1,padding:"4px 6px"}}>⠿</span>
                       {editingTeam===team.id
                         ?<div style={{display:"flex",gap:4,flex:1}}>
                           <input value={editingName} onChange={e=>setEditingName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(updT(team.id,{name:editingName}),setEditingTeam(null))} autoFocus style={{flex:1,padding:"2px 6px",borderRadius:5,border:`1.5px solid ${col.accent}`,fontSize:13,fontWeight:700,outline:"none"}}/>
@@ -760,22 +776,12 @@ function App(){
                   </div>
                 );
               };
-              if(isMobile)return <div style={colStack}>{teams.map(renderTeam)}</div>;
+              if(isMobile)return <div style={colStackBase}>{teams.map(renderTeam)}</div>;
               return(
-                <>
-                {tc>=2&&<div className="no-print" style={{marginBottom:10,padding:"8px 12px",background:"#F0EBE3",borderRadius:10,border:"1px solid #DDD5CC",display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
-                  <span style={{fontSize:11,fontWeight:800,color:"#334155"}}>חלוקת עמודות</span>
-                  <span style={{fontSize:10,color:"#64748B"}} title="כמה צוותים בעמודה השמאלית; שאר ברשימה הימנית. הסדר מלמעלה למטה הוא סדר הגרירה של הצוותים. · Left column count; rest on the right. Top-to-bottom follows your team order.">שמאל</span>
-                  <button type="button" onClick={()=>applyBoardSplit(effectiveSplit-1)} disabled={effectiveSplit<=1} title="העבר צוות אחד לעמודה הימנית · Move one team to the right column" style={{width:28,height:28,borderRadius:6,border:"1px solid #CBD5E1",background:effectiveSplit<=1?"#F1F5F9":"white",cursor:effectiveSplit<=1?"not-allowed":"pointer",fontSize:16,fontWeight:700,lineHeight:1}}>−</button>
-                  <span style={{fontSize:13,fontWeight:800,color:"#0f172a",minWidth:64,textAlign:"center"}}>{effectiveSplit} | {tc-effectiveSplit}</span>
-                  <button type="button" onClick={()=>applyBoardSplit(effectiveSplit+1)} disabled={effectiveSplit>=tc-1} title="העבר צוות אחד לעמודה השמאלית · Move one team to the left column" style={{width:28,height:28,borderRadius:6,border:"1px solid #CBD5E1",background:effectiveSplit>=tc-1?"#F1F5F9":"white",cursor:effectiveSplit>=tc-1?"not-allowed":"pointer",fontSize:16,fontWeight:700,lineHeight:1}}>+</button>
-                  <span style={{fontSize:10,color:"#64748B"}}>ימין</span>
-                </div>}
-                <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-                  <div style={colStack}>{leftColTeams.map(renderTeam)}</div>
-                  <div style={colStack}>{rightColTeams.map(renderTeam)}</div>
+                <div style={{display:"flex",gap:10,alignItems:"flex-start",flex:1,minWidth:0}}>
+                  <div data-board-column="left" style={{...colStackBase,minHeight:240}}>{leftColTeams.map(renderTeam)}</div>
+                  <div data-board-column="right" style={{...colStackBase,minHeight:240}}>{rightColTeams.map(renderTeam)}</div>
                 </div>
-                </>
               );
             })()}
           </div>
