@@ -487,7 +487,13 @@ function App(){
           <span style={{fontSize:isMobile?9:11,opacity:0.65}}>{totalAssigned} assigned · {pool.length} in pool</span>
           <span style={{fontSize:isMobile?8:10,background:statusColor+"33",color:statusColor,border:`1px solid ${statusColor}55`,borderRadius:5,padding:"1px 8px"}}>{statusText}</span>
         </div>
-        <div style={{display:"flex",gap:2,alignItems:"center"}}>
+        <div style={{display:"flex",gap:2,alignItems:"center",flexWrap:"wrap"}}>
+          <button type="button" onClick={()=>setHideRanks(v=>!v)} title="הסתר או הצג דירוגי מדריכים (1–3) בלוח, אנליטיקס וסקירה — שימושי לשיתוף מסך. Hide / show counselor rank badges." style={{
+            background:hideRanks?"rgba(34,197,94,0.35)":"rgba(255,255,255,0.12)",
+            border:`1px solid ${hideRanks?"rgba(74,222,128,0.6)":"rgba(255,255,255,0.28)"}`,
+            color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 11px",cursor:"pointer",
+            fontSize:isMobile?11:12,fontWeight:700,whiteSpace:"nowrap",
+          }}>{hideRanks?(isMobile?"👁 הצג דירוגים":"👁 הצג דירוגי מדריכים"):(isMobile?"🙈 הסתר":"🙈 הסתר דירוגי מדריכים")}</button>
           <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)" style={{background:canUndo?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.2)",color:canUndo?"white":"rgba(255,255,255,0.3)",borderRadius:7,padding:isMobile?"4px 7px":"4px 10px",cursor:canUndo?"pointer":"default",fontSize:isMobile?14:12,fontWeight:700}}>↶</button>
           {[["board",isMobile?"🗂":"🗂 Board"],["analytics",isMobile?"📊":"📊 Analytics"],["overview",isMobile?"📋":"📋 Overview"],["log",isMobile?"📜":"📜 Log"]].map(([t2,l])=>(
             <button key={t2} onClick={()=>setTab(t2)} style={{background:tab===t2?"rgba(255,255,255,0.18)":"transparent",border:tab===t2?"1px solid rgba(255,255,255,0.3)":"1px solid transparent",color:"white",borderRadius:7,padding:isMobile?"4px 8px":"4px 12px",cursor:"pointer",fontSize:isMobile?14:12,fontWeight:tab===t2?700:400}}>{l}</button>
@@ -510,9 +516,9 @@ function App(){
               <span style={{color:"#FCA5A5"}}>3 weakest ({allArr.filter(c=>c.rating===3).length})</span>
               <span style={{fontSize:9,opacity:0.65}}>· team avg ↓ = stronger</span>
             </>}
-            <label title="הסתר דירוגי מדריכים (למשל בזמן שיתוף מסך). מייצאים ל-Excel עדיין כוללים דירוג." style={{display:"inline-flex",alignItems:"center",gap:5,cursor:"pointer",marginLeft:hideRanks?0:6,fontSize:10,opacity:0.95,whiteSpace:"nowrap"}}>
-              <input type="checkbox" checked={hideRanks} onChange={e=>setHideRanks(e.target.checked)} style={{accentColor:"#93C5FD",width:13,height:13}}/>
-              <span>Hide ranks</span>
+            <label title="אותו כפתור כמו בשורת הכותרת למעלה. מייצאים ל-Excel עדיין כוללים דירוג." style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",marginLeft:hideRanks?0:6,fontSize:11,fontWeight:600,opacity:1,whiteSpace:"nowrap",background:hideRanks?"rgba(34,197,94,0.2)":"rgba(255,255,255,0.08)",border:`1px solid ${hideRanks?"rgba(74,222,128,0.45)":"rgba(255,255,255,0.15)"}`,borderRadius:6,padding:"3px 8px"}}>
+              <input type="checkbox" checked={hideRanks} onChange={e=>setHideRanks(e.target.checked)} style={{accentColor:"#4ADE80",width:14,height:14}}/>
+              <span>{hideRanks?"דירוגים מוסתרים":"הסתר דירוגים"}</span>
             </label>
             {!isMobile&&<span style={{marginLeft:"auto",fontSize:9,opacity:0.5}}>/ Search · Ctrl+Z Undo · Esc Close</span>}
           </div>
