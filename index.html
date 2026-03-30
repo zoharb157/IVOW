@@ -516,10 +516,6 @@ function App(){
               <span style={{color:"#FCA5A5"}}>3 weakest ({allArr.filter(c=>c.rating===3).length})</span>
               <span style={{fontSize:9,opacity:0.65}}>· team avg ↓ = stronger</span>
             </>}
-            <label title="אותו כפתור כמו בשורת הכותרת למעלה. מייצאים ל-Excel עדיין כוללים דירוג." style={{display:"inline-flex",alignItems:"center",gap:6,cursor:"pointer",marginLeft:hideRanks?0:6,fontSize:11,fontWeight:600,opacity:1,whiteSpace:"nowrap",background:hideRanks?"rgba(34,197,94,0.2)":"rgba(255,255,255,0.08)",border:`1px solid ${hideRanks?"rgba(74,222,128,0.45)":"rgba(255,255,255,0.15)"}`,borderRadius:6,padding:"3px 8px"}}>
-              <input type="checkbox" checked={hideRanks} onChange={e=>setHideRanks(e.target.checked)} style={{accentColor:"#4ADE80",width:14,height:14}}/>
-              <span>{hideRanks?"דירוגים מוסתרים":"הסתר דירוגים"}</span>
-            </label>
             {!isMobile&&<span style={{marginLeft:"auto",fontSize:9,opacity:0.5}}>/ Search · Ctrl+Z Undo · Esc Close</span>}
           </div>
         );
