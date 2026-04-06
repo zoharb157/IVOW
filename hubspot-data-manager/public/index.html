@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HubSpot Data Manager — The Maimon Group</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f5f5f7;
+    color: #1d1d1f;
+    line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #ff6b35 0%, #c1272d 100%);
+    color: white;
+    padding: 24px 40px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  }
+  header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.3px; }
+  header .subtitle { font-size: 13px; opacity: 0.9; margin-top: 2px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
+
+  /* Wizard steps */
+  .wizard-steps {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .step {
+    flex: 1;
+    min-width: 120px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #86868b;
+  }
+  .step.active {
+    background: linear-gradient(135deg, #ff6b35 0%, #c1272d 100%);
+    color: white;
+    border-color: #c1272d;
+  }
+  .step.completed { background: #e8f5e9; color: #2e7d32; }
+  .step-num { display: block; font-size: 10px; opacity: 0.7; margin-bottom: 2px; }
+
+  /* Panels */
+  .panel {
+    background: white;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    display: none;
+  }
+  .panel.active { display: block; }
+  .panel h2 { font-size: 20px; margin-bottom: 8px; color: #1d1d1f; }
+  .panel .description { color: #6e6e73; margin-bottom: 24px; font-size: 14px; }
+
+  /* Form elements */
+  label { display: block; font-size: 13px; font-weight: 600; color: #1d1d1f; margin-bottom: 6px; }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d2d2d7;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 3px rgba(255,107,53,0.15);
+  }
+
+  button {
+    background: linear-gradient(135deg, #ff6b35 0%, #c1272d 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.secondary { background: #e8e8ed; color: #1d1d1f; }
+  button.ghost { background: transparent; color: #c1272d; border: 1px solid #c1272d; }
+
+  .actions { display: flex; gap: 12px; justify-content: space-between; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e8e8ed; }
+
+  /* Upload zone */
+  .dropzone {
+    border: 2px dashed #d2d2d7;
+    border-radius: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: #ff6b35;
+    background: rgba(255,107,53,0.05);
+  }
+  .dropzone-icon { font-size: 48px; margin-bottom: 12px; }
+  .dropzone-text { font-size: 16px; font-weight: 600; color: #1d1d1f; }
+  .dropzone-hint { font-size: 13px; color: #86868b; margin-top: 4px; }
+
+  /* Tables */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 16px;
+  }
+  .data-table th {
+    background: #f5f5f7;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #1d1d1f;
+    border-bottom: 1px solid #e8e8ed;
+    position: sticky;
+    top: 0;
+  }
+  .data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f3;
+    color: #1d1d1f;
+  }
+  .table-wrap {
+    max-height: 400px;
+    overflow: auto;
+    border: 1px solid #e8e8ed;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+  .stat {
+    background: #f5f5f7;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+  }
+  .stat-value { font-size: 24px; font-weight: 700; color: #c1272d; }
+  .stat-label { font-size: 11px; color: #86868b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  /* Field mapping */
+  .mapping-row {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .mapping-arrow { text-align: center; color: #86868b; font-size: 18px; }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* Labels/chips */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .chip {
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: #f0f0f3;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .chip.selected {
+    background: linear-gradient(135deg, #ff6b35 0%, #c1272d 100%);
+    color: white;
+  }
+
+  /* Validation */
+  .validation-box {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .validation-box.valid { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+  .validation-box.invalid { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
+
+  /* AB Split viz */
+  .split-bar { display: flex; height: 40px; border-radius: 8px; overflow: hidden; margin-top: 12px; }
+  .split-segment { display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 13px; }
+  .split-a { background: #ff6b35; }
+  .split-b { background: #c1272d; }
+  .split-holdout { background: #86868b; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HubSpot Data Manager</h1>
+  <div class="subtitle">The Maimon Group — OwnerPoint CSV Processing Tool</div>
+</header>
+
+<div class="container">
+
+  <!-- Wizard nav -->
+  <div class="wizard-steps" id="wizardSteps">
+    <div class="step active" data-step="1"><span class="step-num">STEP 1</span>Upload CSV</div>
+    <div class="step" data-step="2"><span class="step-num">STEP 2</span>Fix Names</div>
+    <div class="step" data-step="3"><span class="step-num">STEP 3</span>Map Fields</div>
+    <div class="step" data-step="4"><span class="step-num">STEP 4</span>Deduplicate</div>
+    <div class="step" data-step="5"><span class="step-num">STEP 5</span>Labels &amp; Tags</div>
+    <div class="step" data-step="6"><span class="step-num">STEP 6</span>List Naming</div>
+    <div class="step" data-step="7"><span class="step-num">STEP 7</span>AB Split</div>
+    <div class="step" data-step="8"><span class="step-num">STEP 8</span>Export CSV</div>
+  </div>
+
+  <!-- STEP 1: Upload -->
+  <div class="panel active" data-panel="1">
+    <h2>Upload CSV File</h2>
+    <p class="description">Drop your OwnerPoint CSV export here to get started. All processing happens in your browser — your data never leaves your machine.</p>
+    <div class="dropzone" id="dropzone">
+      <div class="dropzone-icon">&#128228;</div>
+      <div class="dropzone-text">Drop CSV file here or click to browse</div>
+      <div class="dropzone-hint">Accepts .csv files up to 50MB</div>
+      <input type="file" id="fileInput" accept=".csv" style="display:none;">
+    </div>
+    <div id="uploadStats" class="hidden">
+      <div class="stats">
+        <div class="stat"><div class="stat-value" id="statRows">0</div><div class="stat-label">Rows</div></div>
+        <div class="stat"><div class="stat-value" id="statCols">0</div><div class="stat-label">Columns</div></div>
+      </div>
+      <div class="table-wrap"><table class="data-table" id="previewTable"></table></div>
+    </div>
+    <div class="actions">
+      <button class="secondary" disabled>Back</button>
+      <button id="next1" disabled>Next: Fix Names &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Fix Names -->
+  <div class="panel" data-panel="2">
+    <h2>Parse Contact Names</h2>
+    <p class="description">Select the column containing full names. Names will be split into prefix, first, middle, last, and suffix. Handles "Last, First" format automatically.</p>
+    <label>Name Column</label>
+    <select id="nameFieldSelect"></select>
+    <button id="parseNamesBtn" style="margin-top:12px;">Parse Names</button>
+    <div id="nameParsePreview" class="hidden">
+      <div class="table-wrap"><table class="data-table" id="nameTable"></table></div>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(1)">&larr; Back</button>
+      <button onclick="goStep(3)">Next: Map Fields &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Map Fields -->
+  <div class="panel" data-panel="3">
+    <h2>Map Fields to HubSpot</h2>
+    <p class="description">Map your CSV columns to HubSpot contact properties. Supports 4 address types: Primary, Listing, STR/LTR, and Agent.</p>
+    <div id="fieldMappings"></div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(2)">&larr; Back</button>
+      <button onclick="goStep(4)">Next: Deduplicate &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: Deduplicate -->
+  <div class="panel" data-panel="4">
+    <h2>Remove Duplicates</h2>
+    <p class="description">Choose fields to match on when finding duplicate contacts.</p>
+    <label>Deduplicate By</label>
+    <div id="dedupeKeys" class="chip-group"></div>
+    <button id="dedupeBtn" style="margin-top:16px;">Run Deduplication</button>
+    <div id="dedupeResults" class="hidden">
+      <div class="stats">
+        <div class="stat"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total</div></div>
+        <div class="stat"><div class="stat-value" id="statUnique">0</div><div class="stat-label">Unique</div></div>
+        <div class="stat"><div class="stat-value" id="statDupes">0</div><div class="stat-label">Duplicates</div></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(3)">&larr; Back</button>
+      <button onclick="goStep(5)">Next: Labels &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 5: Labels -->
+  <div class="panel" data-panel="5">
+    <h2>Apply Labels &amp; Tags</h2>
+    <p class="description">Tag all contacts with the appropriate source, type, department, and status.</p>
+    <div class="grid-2">
+      <div><label>Source</label><select id="labelSource"></select></div>
+      <div><label>Contact Type</label><select id="labelContactType"></select></div>
+      <div><label>Property Type</label><select id="labelPropType"></select></div>
+      <div><label>Department</label><select id="labelDept"></select></div>
+      <div><label>Status</label><select id="labelStatus"></select></div>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(4)">&larr; Back</button>
+      <button onclick="applyLabels(); goStep(6)">Next: List Naming &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 6: List Naming -->
+  <div class="panel" data-panel="6">
+    <h2>List Naming Convention</h2>
+    <p class="description">Format: <strong>DEPT-TYPE-Source-YYYYMMDD-Description</strong><br>Example: MKT-OWNER-OwnerPoint-20260404-Orlando_SFR_Absentee</p>
+    <label>List Name</label>
+    <input type="text" id="listName" placeholder="MKT-OWNER-OwnerPoint-20260404-Description">
+    <div id="listValidation"></div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(5)">&larr; Back</button>
+      <button onclick="goStep(7)">Next: AB Split &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 7: AB Split -->
+  <div class="panel" data-panel="7">
+    <h2>AB Test Split</h2>
+    <p class="description">Set aside a holdout group, then split remaining contacts 50/50 into Group A and Group B.</p>
+    <label>Holdout Percent</label>
+    <input type="number" id="holdoutPct" value="20" min="0" max="100">
+    <button id="splitBtn" style="margin-top:12px;">Generate Split</button>
+    <div id="splitResults" class="hidden">
+      <div class="split-bar" id="splitBar"></div>
+      <div class="stats" style="margin-top:16px;">
+        <div class="stat"><div class="stat-value" id="statGroupA">0</div><div class="stat-label">Group A</div></div>
+        <div class="stat"><div class="stat-value" id="statGroupB">0</div><div class="stat-label">Group B</div></div>
+        <div class="stat"><div class="stat-value" id="statHoldout">0</div><div class="stat-label">Holdout</div></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(6)">&larr; Back</button>
+      <button onclick="goStep(8)">Next: Export &rarr;</button>
+    </div>
+  </div>
+
+  <!-- STEP 8: Export -->
+  <div class="panel" data-panel="8">
+    <h2>Export for HubSpot</h2>
+    <p class="description">Download your processed data as a HubSpot-ready CSV, or push directly to HubSpot via the API.</p>
+    <div class="stats">
+      <div class="stat"><div class="stat-value" id="exportCount">0</div><div class="stat-label">Contacts Ready</div></div>
+    </div>
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <button onclick="exportCSV()">&#128229; Download CSV</button>
+      <button class="ghost" onclick="pushToHubSpot()">&#8599; Push to HubSpot</button>
+    </div>
+    <div id="exportStatus" style="margin-top:16px;"></div>
+    <div class="actions">
+      <button class="secondary" onclick="goStep(7)">&larr; Back</button>
+      <button onclick="location.reload()">Start Over</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────
+const state = {
+  headers: [],
+  rows: [],
+  processedRows: [],
+  mappings: {},
+  labels: {},
+  listName: '',
+  split: null
+};
+
+const LABELS = {
+  sources: ['OwnerPoint', 'MLS', 'Zillow', 'Realtor.com', 'Referral', 'Direct Mail', 'Cold Call', 'Website', 'Social Media'],
+  contactTypes: ['Property Owner', 'Agent', 'Investor', 'Tenant', 'Vendor', 'Lead', 'Past Client'],
+  propertyTypes: ['SFR', 'Multi-Family', 'Condo', 'Townhouse', 'Land', 'Commercial', 'STR', 'LTR', 'Mixed Use'],
+  departments: ['Sales', 'Marketing', 'Operations', 'Property Mgmt', 'Acquisitions', 'Dispositions'],
+  statuses: ['New', 'Contacted', 'Qualified', 'Nurturing', 'Under Contract', 'Closed', 'Dead']
+};
+
+const HUBSPOT_FIELDS = [
+  'email', 'firstname', 'lastname', 'phone', 'mobilephone', 'company',
+  'address', 'city', 'state', 'zip', 'jobtitle', 'lifecyclestage'
+];
+
+// ─── Navigation ───────────────────────────────────────────────────
+function goStep(n) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.panel[data-panel="${n}"]`).classList.add('active');
+  document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
+  // Mark previous steps completed
+  for (let i = 1; i < n; i++) {
+    document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
+  }
+}
+document.querySelectorAll('.step').forEach(s => {
+  s.addEventListener('click', () => goStep(parseInt(s.dataset.step)));
+});
+
+// ─── STEP 1: CSV Upload ───────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => parseCSV(e.target.result);
+  reader.readAsText(file);
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return alert('CSV must have header + data rows');
+  const headers = parseCSVLine(lines[0]);
+  const rows = lines.slice(1).map(line => {
+    const values = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, i) => row[h] = values[i] || '');
+    return row;
+  });
+  state.headers = headers;
+  state.rows = rows;
+  state.processedRows = [...rows];
+
+  document.getElementById('statRows').textContent = rows.length;
+  document.getElementById('statCols').textContent = headers.length;
+  document.getElementById('uploadStats').classList.remove('hidden');
+  document.getElementById('next1').disabled = false;
+
+  renderPreviewTable(headers, rows.slice(0, 10), 'previewTable');
+  populateNameSelect();
+  populateFieldMappings();
+  populateDedupeKeys();
+  populateLabelSelects();
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (c === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else current += c;
+  }
+  result.push(current);
+  return result.map(s => s.trim());
+}
+
+function renderPreviewTable(headers, rows, id) {
+  const table = document.getElementById(id);
+  table.innerHTML = '';
+  const thead = table.createTHead();
+  const headerRow = thead.insertRow();
+  headers.forEach(h => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    headerRow.appendChild(th);
+  });
+  const tbody = table.createTBody();
+  rows.forEach(row => {
+    const tr = tbody.insertRow();
+    headers.forEach(h => {
+      const td = tr.insertCell();
+      td.textContent = row[h] || '';
+    });
+  });
+}
+
+document.getElementById('next1').addEventListener('click', () => goStep(2));
+
+// ─── STEP 2: Name Parsing ─────────────────────────────────────────
+const PREFIXES = new Set(['mr','mrs','ms','dr','prof','rev','sir','hon']);
+const SUFFIXES = new Set(['jr','sr','ii','iii','iv','v','esq','md','phd']);
+
+function parseName(fullName) {
+  if (!fullName) return { prefix:'', firstName:'', middleName:'', lastName:'', suffix:'' };
+  let name = fullName.trim().replace(/\s+/g, ' ');
+  if (name.includes(',')) {
+    const [last, ...rest] = name.split(',').map(s => s.trim());
+    name = rest.join(' ') + ' ' + last;
+  }
+  const parts = name.split(' ');
+  let prefix = '', suffix = '';
+  if (parts.length > 1 && PREFIXES.has(parts[0].toLowerCase().replace(/\./g,''))) prefix = parts.shift();
+  if (parts.length > 1 && SUFFIXES.has(parts[parts.length-1].toLowerCase().replace(/\./g,''))) suffix = parts.pop();
+  let firstName = '', middleName = '', lastName = '';
+  if (parts.length === 1) firstName = parts[0];
+  else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
+  else { firstName = parts[0]; lastName = parts[parts.length-1]; middleName = parts.slice(1,-1).join(' '); }
+  return { prefix, firstName, middleName, lastName, suffix };
+}
+
+function populateNameSelect() {
+  const sel = document.getElementById('nameFieldSelect');
+  sel.innerHTML = '<option value="">-- Select column --</option>';
+  state.headers.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h; opt.textContent = h;
+    if (/name/i.test(h)) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+document.getElementById('parseNamesBtn').addEventListener('click', () => {
+  const field = document.getElementById('nameFieldSelect').value;
+  if (!field) return alert('Select a name column');
+  state.processedRows = state.processedRows.map(row => {
+    const parsed = parseName(row[field]);
+    return {
+      ...row,
+      _prefix: parsed.prefix,
+      firstname: parsed.firstName,
+      _middleName: parsed.middleName,
+      lastname: parsed.lastName,
+      _suffix: parsed.suffix
+    };
+  });
+  const preview = document.getElementById('nameParsePreview');
+  preview.classList.remove('hidden');
+  renderPreviewTable(
+    ['_prefix','firstname','_middleName','lastname','_suffix'],
+    state.processedRows.slice(0, 10),
+    'nameTable'
+  );
+});
+
+// ─── STEP 3: Field Mapping ────────────────────────────────────────
+function populateFieldMappings() {
+  const container = document.getElementById('fieldMappings');
+  container.innerHTML = '';
+  HUBSPOT_FIELDS.forEach(hf => {
+    const row = document.createElement('div');
+    row.className = 'mapping-row';
+    row.innerHTML = `
+      <div><strong>${hf}</strong></div>
+      <div class="mapping-arrow">&larr;</div>
+      <select data-hubspot="${hf}">
+        <option value="">-- none --</option>
+        ${state.headers.map(h => {
+          const match = h.toLowerCase().includes(hf.toLowerCase()) ||
+                        (hf === 'firstname' && /first/i.test(h)) ||
+                        (hf === 'lastname' && /last/i.test(h));
+          return `<option value="${h}"${match?' selected':''}>${h}</option>`;
+        }).join('')}
+      </select>
+    `;
+    container.appendChild(row);
+  });
+  container.querySelectorAll('select').forEach(s => {
+    s.addEventListener('change', (e) => {
+      state.mappings[e.target.dataset.hubspot] = e.target.value;
+    });
+    if (s.value) state.mappings[s.dataset.hubspot] = s.value;
+  });
+}
+
+// ─── STEP 4: Deduplicate ──────────────────────────────────────────
+function populateDedupeKeys() {
+  const container = document.getElementById('dedupeKeys');
+  container.innerHTML = '';
+  ['email', 'phone', 'firstname+lastname'].forEach(key => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = key;
+    if (key === 'email') chip.classList.add('selected');
+    chip.addEventListener('click', () => chip.classList.toggle('selected'));
+    container.appendChild(chip);
+  });
+}
+
+document.getElementById('dedupeBtn').addEventListener('click', () => {
+  const selectedChips = document.querySelectorAll('#dedupeKeys .chip.selected');
+  const keys = Array.from(selectedChips).map(c => c.textContent);
+  if (keys.length === 0) return alert('Select at least one dedup key');
+
+  const seen = new Set();
+  const unique = [];
+  let dupes = 0;
+  state.processedRows.forEach(row => {
+    const key = keys.map(k => {
+      if (k === 'firstname+lastname') return ((row.firstname||'')+'|'+(row.lastname||'')).toLowerCase().trim();
+      return (row[k]||row[state.mappings[k]]||'').toString().toLowerCase().trim();
+    }).join('::');
+    if (key && seen.has(key)) dupes++;
+    else { seen.add(key); unique.push(row); }
+  });
+  document.getElementById('statTotal').textContent = state.processedRows.length;
+  document.getElementById('statUnique').textContent = unique.length;
+  document.getElementById('statDupes').textContent = dupes;
+  document.getElementById('dedupeResults').classList.remove('hidden');
+  state.processedRows = unique;
+});
+
+// ─── STEP 5: Labels ───────────────────────────────────────────────
+function populateLabelSelects() {
+  const map = {
+    labelSource: LABELS.sources,
+    labelContactType: LABELS.contactTypes,
+    labelPropType: LABELS.propertyTypes,
+    labelDept: LABELS.departments,
+    labelStatus: LABELS.statuses
+  };
+  for (const [id, items] of Object.entries(map)) {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">-- none --</option>' +
+      items.map(i => `<option value="${i}">${i}</option>`).join('');
+  }
+}
+
+function applyLabels() {
+  state.labels = {
+    source: document.getElementById('labelSource').value,
+    contactType: document.getElementById('labelContactType').value,
+    propertyType: document.getElementById('labelPropType').value,
+    department: document.getElementById('labelDept').value,
+    status: document.getElementById('labelStatus').value
+  };
+  state.processedRows = state.processedRows.map(row => ({
+    ...row,
+    hs_source: state.labels.source,
+    contact_type: state.labels.contactType,
+    property_type: state.labels.propertyType,
+    department: state.labels.department,
+    hs_lead_status: state.labels.status
+  }));
+}
+
+// ─── STEP 6: List Naming Validation ───────────────────────────────
+document.getElementById('listName').addEventListener('input', (e) => {
+  const name = e.target.value;
+  state.listName = name;
+  const box = document.getElementById('listValidation');
+  const pattern = /^[A-Z]{2,5}-[A-Z]{2,5}-[A-Za-z0-9]+-\d{4}[01]\d[0-3]\d-.+$/;
+  if (pattern.test(name)) {
+    box.className = 'validation-box valid';
+    box.innerHTML = '&#10003; Valid format';
+  } else if (name) {
+    box.className = 'validation-box invalid';
+    box.innerHTML = '&#10007; Invalid. Expected: DEPT-TYPE-Source-YYYYMMDD-Description';
+  } else {
+    box.className = '';
+    box.innerHTML = '';
+  }
+});
+
+// ─── STEP 7: AB Split ─────────────────────────────────────────────
+document.getElementById('splitBtn').addEventListener('click', () => {
+  const pct = parseInt(document.getElementById('holdoutPct').value) || 20;
+  const shuffled = [...state.processedRows].sort(() => Math.random() - 0.5);
+  const holdoutCount = Math.round(shuffled.length * pct / 100);
+  const holdout = shuffled.slice(0, holdoutCount).map(r => ({...r, ab_group: 'Holdout'}));
+  const active = shuffled.slice(holdoutCount);
+  const mid = Math.ceil(active.length / 2);
+  const groupA = active.slice(0, mid).map(r => ({...r, ab_group: 'A'}));
+  const groupB = active.slice(mid).map(r => ({...r, ab_group: 'B'}));
+
+  state.split = { groupA, groupB, holdout };
+  state.processedRows = [...groupA, ...groupB, ...holdout];
+
+  document.getElementById('statGroupA').textContent = groupA.length;
+  document.getElementById('statGroupB').textContent = groupB.length;
+  document.getElementById('statHoldout').textContent = holdout.length;
+
+  const total = shuffled.length || 1;
+  document.getElementById('splitBar').innerHTML = `
+    <div class="split-segment split-a" style="width:${groupA.length/total*100}%">A: ${groupA.length}</div>
+    <div class="split-segment split-b" style="width:${groupB.length/total*100}%">B: ${groupB.length}</div>
+    <div class="split-segment split-holdout" style="width:${holdout.length/total*100}%">Holdout: ${holdout.length}</div>
+  `;
+  document.getElementById('splitResults').classList.remove('hidden');
+});
+
+// ─── STEP 8: Export ───────────────────────────────────────────────
+document.querySelector('.step[data-step="8"]').addEventListener('click', () => {
+  document.getElementById('exportCount').textContent = state.processedRows.length;
+});
+
+function exportCSV() {
+  if (state.processedRows.length === 0) return alert('No data to export');
+  const keys = Object.keys(state.processedRows[0]);
+  const header = keys.map(k => `"${k}"`).join(',');
+  const rows = state.processedRows.map(r =>
+    keys.map(k => `"${(r[k]||'').toString().replace(/"/g,'""')}"`).join(',')
+  );
+  const csv = [header, ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (state.listName || 'hubspot_export') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function pushToHubSpot() {
+  const status = document.getElementById('exportStatus');
+  status.innerHTML = 'Pushing to HubSpot...';
+  try {
+    const contacts = state.processedRows.map(row => {
+      const contact = {};
+      HUBSPOT_FIELDS.forEach(f => { if (row[f]) contact[f] = row[f]; });
+      return contact;
+    });
+    const res = await fetch('/api/hubspot/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contacts })
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.innerHTML = `<div class="validation-box valid">&#10003; Imported ${data.created} contacts to HubSpot</div>`;
+    } else {
+      status.innerHTML = `<div class="validation-box invalid">Partial: ${data.created}/${data.total}. Errors: ${data.errors.length}</div>`;
+    }
+  } catch (err) {
+    status.innerHTML = `<div class="validation-box invalid">Error: ${err.message}. Make sure the server is running.</div>`;
+  }
+}
+</script>
+
+</body>
+</html>
