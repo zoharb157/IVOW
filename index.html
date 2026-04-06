@@ -238,7 +238,7 @@
       <div class="dropzone-icon">&#128228;</div>
       <div class="dropzone-text">Drop CSV file here or click to browse</div>
       <div class="dropzone-hint">Accepts .csv, .xlsx, .xls files up to 50MB</div>
-      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none;">
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;">
     </div>
     <div id="uploadStats" class="hidden">
       <div class="stats">
@@ -447,6 +447,11 @@ fileInput.addEventListener('change', (e) => {
 function handleFile(file) {
   const name = file.name.toLowerCase();
   const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
+  const isCSV = name.endsWith('.csv') || name.endsWith('.txt') || name.endsWith('.tsv');
+  if (!isExcel && !isCSV) {
+    alert(`"${file.name}" isn't a supported file type.\n\nPlease upload a .csv, .xlsx, or .xls file.`);
+    return;
+  }
   const reader = new FileReader();
   reader.onload = (e) => {
     if (isExcel) {
