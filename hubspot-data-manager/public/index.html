@@ -50,6 +50,7 @@
     border-color: #c1272d;
   }
   .step.completed { background: #e8f5e9; color: #2e7d32; }
+  .step.locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
   .step-num { display: block; font-size: 10px; opacity: 0.7; margin-bottom: 2px; }
 
   /* Panels */
@@ -263,7 +264,7 @@
     </div>
     <div class="actions">
       <button class="secondary" onclick="goStep(1)">&larr; Back</button>
-      <button onclick="goStep(3)">Next: Map Fields &rarr;</button>
+      <button id="next2" disabled onclick="unlock(3); goStep(3)">Next: Map Fields &rarr;</button>
     </div>
   </div>
 
@@ -274,7 +275,7 @@
     <div id="fieldMappings"></div>
     <div class="actions">
       <button class="secondary" onclick="goStep(2)">&larr; Back</button>
-      <button onclick="goStep(4)">Next: Deduplicate &rarr;</button>
+      <button id="next3" disabled onclick="unlock(4); goStep(4)">Next: Deduplicate &rarr;</button>
     </div>
   </div>
 
@@ -294,7 +295,7 @@
     </div>
     <div class="actions">
       <button class="secondary" onclick="goStep(3)">&larr; Back</button>
-      <button onclick="goStep(5)">Next: Labels &rarr;</button>
+      <button id="next4" disabled onclick="unlock(5); goStep(5)">Next: Labels &rarr;</button>
     </div>
   </div>
 
@@ -311,7 +312,7 @@
     </div>
     <div class="actions">
       <button class="secondary" onclick="goStep(4)">&larr; Back</button>
-      <button onclick="applyLabels(); goStep(6)">Next: List Naming &rarr;</button>
+      <button id="next5" disabled onclick="applyLabels(); unlock(6); goStep(6)">Next: List Naming &rarr;</button>
     </div>
   </div>
 
@@ -324,7 +325,7 @@
     <div id="listValidation"></div>
     <div class="actions">
       <button class="secondary" onclick="goStep(5)">&larr; Back</button>
-      <button onclick="goStep(7)">Next: AB Split &rarr;</button>
+      <button id="next6" disabled onclick="unlock(7); goStep(7)">Next: AB Split &rarr;</button>
     </div>
   </div>
 
@@ -345,7 +346,7 @@
     </div>
     <div class="actions">
       <button class="secondary" onclick="goStep(6)">&larr; Back</button>
-      <button onclick="goStep(8)">Next: Export &rarr;</button>
+      <button id="next7" disabled onclick="unlock(8); goStep(8)">Next: Export &rarr;</button>
     </div>
   </div>
 
@@ -378,7 +379,9 @@ const state = {
   mappings: {},
   labels: {},
   listName: '',
-  split: null
+  split: null,
+  maxStep: 1,
+  completed: {}
 };
 
 const LABELS = {
@@ -395,19 +398,34 @@ const HUBSPOT_FIELDS = [
 ];
 
 // ─── Navigation ───────────────────────────────────────────────────
+function unlock(n) {
+  if (n > state.maxStep) state.maxStep = n;
+  refreshLocks();
+}
+function refreshLocks() {
+  document.querySelectorAll('.step').forEach(s => {
+    const n = parseInt(s.dataset.step);
+    s.classList.toggle('locked', n > state.maxStep);
+  });
+}
 function goStep(n) {
+  if (n > state.maxStep) {
+    alert('Please complete the current step first.');
+    return;
+  }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
   document.querySelector(`.panel[data-panel="${n}"]`).classList.add('active');
   document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
-  // Mark previous steps completed
   for (let i = 1; i < n; i++) {
     document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
   }
+  refreshLocks();
 }
 document.querySelectorAll('.step').forEach(s => {
   s.addEventListener('click', () => goStep(parseInt(s.dataset.step)));
 });
+refreshLocks();
 
 // ─── STEP 1: CSV Upload ───────────────────────────────────────────
 const dropzone = document.getElementById('dropzone');
@@ -493,7 +511,7 @@ function renderPreviewTable(headers, rows, id) {
   });
 }
 
-document.getElementById('next1').addEventListener('click', () => goStep(2));
+document.getElementById('next1').addEventListener('click', () => { unlock(2); goStep(2); });
 
 // ─── STEP 2: Name Parsing ─────────────────────────────────────────
 const PREFIXES = new Set(['mr','mrs','ms','dr','prof','rev','sir','hon']);
@@ -549,6 +567,7 @@ document.getElementById('parseNamesBtn').addEventListener('click', () => {
     state.processedRows.slice(0, 10),
     'nameTable'
   );
+  document.getElementById('next2').disabled = false;
 });
 
 // ─── STEP 3: Field Mapping ────────────────────────────────────────
@@ -576,9 +595,15 @@ function populateFieldMappings() {
   container.querySelectorAll('select').forEach(s => {
     s.addEventListener('change', (e) => {
       state.mappings[e.target.dataset.hubspot] = e.target.value;
+      checkMappings();
     });
     if (s.value) state.mappings[s.dataset.hubspot] = s.value;
   });
+  checkMappings();
+}
+function checkMappings() {
+  const hasAny = Object.values(state.mappings).some(v => v);
+  document.getElementById('next3').disabled = !hasAny;
 }
 
 // ─── STEP 4: Deduplicate ──────────────────────────────────────────
@@ -616,6 +641,7 @@ document.getElementById('dedupeBtn').addEventListener('click', () => {
   document.getElementById('statDupes').textContent = dupes;
   document.getElementById('dedupeResults').classList.remove('hidden');
   state.processedRows = unique;
+  document.getElementById('next4').disabled = false;
 });
 
 // ─── STEP 5: Labels ───────────────────────────────────────────────
@@ -631,7 +657,13 @@ function populateLabelSelects() {
     const sel = document.getElementById(id);
     sel.innerHTML = '<option value="">-- none --</option>' +
       items.map(i => `<option value="${i}">${i}</option>`).join('');
+    sel.addEventListener('change', checkLabels);
   }
+}
+function checkLabels() {
+  const ids = ['labelSource','labelContactType','labelPropType','labelDept','labelStatus'];
+  const allSet = ids.every(id => document.getElementById(id).value);
+  document.getElementById('next5').disabled = !allSet;
 }
 
 function applyLabels() {
@@ -658,7 +690,8 @@ document.getElementById('listName').addEventListener('input', (e) => {
   state.listName = name;
   const box = document.getElementById('listValidation');
   const pattern = /^[A-Z]{2,5}-[A-Z]{2,5}-[A-Za-z0-9]+-\d{4}[01]\d[0-3]\d-.+$/;
-  if (pattern.test(name)) {
+  const valid = pattern.test(name);
+  if (valid) {
     box.className = 'validation-box valid';
     box.innerHTML = '&#10003; Valid format';
   } else if (name) {
@@ -668,6 +701,7 @@ document.getElementById('listName').addEventListener('input', (e) => {
     box.className = '';
     box.innerHTML = '';
   }
+  document.getElementById('next6').disabled = !valid;
 });
 
 // ─── STEP 7: AB Split ─────────────────────────────────────────────
@@ -695,6 +729,7 @@ document.getElementById('splitBtn').addEventListener('click', () => {
     <div class="split-segment split-holdout" style="width:${holdout.length/total*100}%">Holdout: ${holdout.length}</div>
   `;
   document.getElementById('splitResults').classList.remove('hidden');
+  document.getElementById('next7').disabled = false;
 });
 
 // ─── STEP 8: Export ───────────────────────────────────────────────
