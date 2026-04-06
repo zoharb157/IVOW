@@ -446,31 +446,38 @@ fileInput.addEventListener('change', (e) => {
 
 function handleFile(file) {
   const name = file.name.toLowerCase();
-  const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
-  const isCSV = name.endsWith('.csv') || name.endsWith('.txt') || name.endsWith('.tsv');
-  if (!isExcel && !isCSV) {
+  const isCsvName = name.endsWith('.csv') || name.endsWith('.txt') || name.endsWith('.tsv');
+  const isExcelName = name.endsWith('.xlsx') || name.endsWith('.xls');
+  if (!isCsvName && !isExcelName) {
     alert(`"${file.name}" isn't a supported file type.\n\nPlease upload a .csv, .xlsx, or .xls file.`);
     return;
   }
+
+  // ALWAYS read as ArrayBuffer first and sniff magic bytes.
+  // This is the only reliable way to tell CSV from Excel regardless of extension.
   const reader = new FileReader();
   reader.onload = (e) => {
-    if (isExcel) {
-      parseExcel(e.target.result);
-    } else {
-      // Sniff for ZIP/Excel binary even if extension is wrong
-      const text = e.target.result;
-      if (typeof text === 'string' && text.startsWith('PK')) {
-        alert('This looks like an Excel file (.xlsx) saved with a .csv extension. Re-uploading as Excel...');
-        const r2 = new FileReader();
-        r2.onload = (ev) => parseExcel(ev.target.result);
-        r2.readAsArrayBuffer(file);
-        return;
-      }
-      parseCSV(text);
+    const buffer = e.target.result;
+    const bytes = new Uint8Array(buffer);
+
+    // ZIP magic: 50 4B 03 04 (Excel .xlsx, modern Office docs)
+    // OLE magic: D0 CF 11 E0 (legacy Excel .xls)
+    const isZipMagic = bytes[0] === 0x50 && bytes[1] === 0x4B;
+    const isOleMagic = bytes[0] === 0xD0 && bytes[1] === 0xCF && bytes[2] === 0x11 && bytes[3] === 0xE0;
+
+    if (isZipMagic || isOleMagic) {
+      // It's an Excel file (regardless of extension)
+      parseExcel(buffer);
+      return;
     }
+
+    // It's text — decode as UTF-8 and parse as CSV
+    const text = new TextDecoder('utf-8').decode(bytes);
+    if (!text.trim()) return alert('File appears to be empty');
+    parseCSV(text);
   };
-  if (isExcel) reader.readAsArrayBuffer(file);
-  else reader.readAsText(file);
+  reader.onerror = () => alert('Failed to read file');
+  reader.readAsArrayBuffer(file);
 }
 
 function parseExcel(arrayBuffer) {
