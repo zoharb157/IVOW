@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HubSpot Data Manager — The Maimon Group</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -236,8 +237,8 @@
     <div class="dropzone" id="dropzone">
       <div class="dropzone-icon">&#128228;</div>
       <div class="dropzone-text">Drop CSV file here or click to browse</div>
-      <div class="dropzone-hint">Accepts .csv files up to 50MB</div>
-      <input type="file" id="fileInput" accept=".csv" style="display:none;">
+      <div class="dropzone-hint">Accepts .csv, .xlsx, .xls files up to 50MB</div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none;">
     </div>
     <div id="uploadStats" class="hidden">
       <div class="stats">
@@ -444,21 +445,45 @@ fileInput.addEventListener('change', (e) => {
 });
 
 function handleFile(file) {
+  const name = file.name.toLowerCase();
+  const isExcel = name.endsWith('.xlsx') || name.endsWith('.xls');
   const reader = new FileReader();
-  reader.onload = (e) => parseCSV(e.target.result);
-  reader.readAsText(file);
+  reader.onload = (e) => {
+    if (isExcel) {
+      parseExcel(e.target.result);
+    } else {
+      // Sniff for ZIP/Excel binary even if extension is wrong
+      const text = e.target.result;
+      if (typeof text === 'string' && text.startsWith('PK')) {
+        alert('This looks like an Excel file (.xlsx) saved with a .csv extension. Re-uploading as Excel...');
+        const r2 = new FileReader();
+        r2.onload = (ev) => parseExcel(ev.target.result);
+        r2.readAsArrayBuffer(file);
+        return;
+      }
+      parseCSV(text);
+    }
+  };
+  if (isExcel) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return alert('CSV must have header + data rows');
-  const headers = parseCSVLine(lines[0]);
-  const rows = lines.slice(1).map(line => {
-    const values = parseCSVLine(line);
-    const row = {};
-    headers.forEach((h, i) => row[h] = values[i] || '');
-    return row;
-  });
+function parseExcel(arrayBuffer) {
+  try {
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const firstSheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[firstSheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+    if (json.length === 0) return alert('Excel file appears to be empty');
+    const headers = Object.keys(json[0]);
+    loadData(headers, json);
+  } catch (err) {
+    alert('Failed to parse Excel file: ' + err.message);
+  }
+}
+
+function loadData(headers, rows) {
   state.headers = headers;
   state.rows = rows;
   state.processedRows = [...rows];
@@ -473,6 +498,19 @@ function parseCSV(text) {
   populateFieldMappings();
   populateDedupeKeys();
   populateLabelSelects();
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return alert('CSV must have header + data rows');
+  const headers = parseCSVLine(lines[0]);
+  const rows = lines.slice(1).map(line => {
+    const values = parseCSVLine(line);
+    const row = {};
+    headers.forEach((h, i) => row[h] = values[i] || '');
+    return row;
+  });
+  loadData(headers, rows);
 }
 
 function parseCSVLine(line) {
